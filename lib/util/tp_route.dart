@@ -12,6 +12,8 @@ import 'package:town_pass/page/basic_info_edit/basic_info_edit_view_controller.d
 import 'package:town_pass/page/city_service/widget/pinned_service_widget_controller.dart';
 import 'package:town_pass/page/city_service_edit/city_service_edit_view.dart';
 import 'package:town_pass/page/city_service_edit/city_service_edit_view_controller.dart';
+import 'package:town_pass/page/children_park/children_park_controller.dart';
+import 'package:town_pass/page/children_park/children_park_view.dart';
 import 'package:town_pass/page/feedback/feedback_view.dart';
 import 'package:town_pass/page/feedback/feedback_view_controller.dart';
 import 'package:town_pass/page/invoice_receipt/invoice_receipt_view.dart';
@@ -59,6 +61,7 @@ abstract class TPRoute {
   static const String subscription = '/subscription';
   static const String suspendAccount = '/suspend_account';
   static const String webView = '/web_view';
+  static const String childrenPark = '/children_park';
 
   static final List<GetPage> page = [
     GetPage(
@@ -127,7 +130,8 @@ abstract class TPRoute {
       name: phoneCallUserAgreement,
       page: () => const PhoneCallUserAgreementView(),
       binding: BindingsBuilder(() {
-        Get.put<PhoneCallUserAgreementViewController>(PhoneCallUserAgreementViewController());
+        Get.put<PhoneCallUserAgreementViewController>(
+            PhoneCallUserAgreementViewController());
       }),
     ),
     GetPage(
@@ -185,6 +189,13 @@ abstract class TPRoute {
       name: activityDetail,
       page: () => const ActivityDetailView(),
     ),
+    GetPage(
+      name: childrenPark,
+      page: () => const ChildrenParkView(),
+      binding: BindingsBuilder(() {
+        Get.put<ChildrenParkController>(ChildrenParkController());
+      }),
+    ),
   ];
 
   static Future openUri({required String uri, String? forceTitle}) async {
@@ -195,7 +206,9 @@ abstract class TPRoute {
     return switch (Uri.tryParse(uri)) {
       null => Future.value(null),
       Uri uri => switch (uri.scheme) {
-          'local' => Get.toNamed(uri.host),
+          'local' => Get.toNamed(
+              uri.host.startsWith('/') ? uri.host : '/${uri.host}',
+            ),
           _ => Get.toNamed(
               TPRoute.webView,
               arguments: WebViewArgument(

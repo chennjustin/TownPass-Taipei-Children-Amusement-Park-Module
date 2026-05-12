@@ -55,14 +55,16 @@ extension MyServiceIdExt on MyServiceItemId {
           description: '陳情系統',
           icon: Assets.svg.iconTalk.svg(),
           category: MyServiceCategory.cityService,
-          destinationUrl: 'https://taipei-pass-service.vercel.app/citizen-report/',
+          destinationUrl:
+              'https://taipei-pass-service.vercel.app/citizen-report/',
         ),
       MyServiceItemId.reservation => MyServiceItem(
           title: '臨櫃叫號',
           description: '臨櫃服務查看叫號、預約',
           icon: Assets.svg.iconReservation.svg(),
           category: MyServiceCategory.cityService,
-          destinationUrl: 'https://taipei-pass-service.vercel.app/counter-calling/',
+          destinationUrl:
+              'https://taipei-pass-service.vercel.app/counter-calling/',
         ),
       MyServiceItemId.iVoting => MyServiceItem(
           title: '網路投票',
@@ -105,7 +107,8 @@ extension MyServiceIdExt on MyServiceItemId {
           description: '立即通報發生災情地點',
           icon: Assets.svg.iconEarthquake.svg(),
           category: MyServiceCategory.cityService,
-          destinationUrl: 'https://taipei-pass-service.vercel.app/disaster-report',
+          destinationUrl:
+              'https://taipei-pass-service.vercel.app/disaster-report',
         ),
       MyServiceItemId.vaccineAppointment => MyServiceItem(
           title: '疫苗預約',
@@ -168,14 +171,16 @@ extension MyServiceIdExt on MyServiceItemId {
           description: '市立圖書館借閱服務',
           icon: Assets.svg.iconLibraryBorrow.svg(),
           category: MyServiceCategory.cityLife,
-          destinationUrl: 'https://taipei-pass-service.vercel.app/library-service/',
+          destinationUrl:
+              'https://taipei-pass-service.vercel.app/library-service/',
         ),
       MyServiceItemId.locationSearch => MyServiceItem(
           title: '找地點',
           description: '提供各區日常服務地圖查找',
           icon: Assets.svg.iconLocationSearch24.svg(),
           category: MyServiceCategory.explore,
-          destinationUrl: 'https://taipei-pass-service.vercel.app/surrounding-service/',
+          destinationUrl:
+              'https://taipei-pass-service.vercel.app/surrounding-service/',
         ),
       MyServiceItemId.zoo => MyServiceItem(
           title: '愛遊動物園',
@@ -184,12 +189,12 @@ extension MyServiceIdExt on MyServiceItemId {
           category: MyServiceCategory.explore,
           destinationUrl: '',
         ),
-        MyServiceItemId.taipeiChildrenAmusementPark => MyServiceItem(
+      MyServiceItemId.taipeiChildrenAmusementPark => MyServiceItem(
           title: '兒童新樂園',
-          description: 'Lorum Ipsum dolor sit amet',
+          description: '智慧導覽地圖、排隊時間與活動行程',
           icon: Assets.svg.iconChildrenAmusementPark.svg(),
           category: MyServiceCategory.explore,
-          destinationUrl: '',
+          destinationUrl: 'local://children_park',
         ),
     };
   }
