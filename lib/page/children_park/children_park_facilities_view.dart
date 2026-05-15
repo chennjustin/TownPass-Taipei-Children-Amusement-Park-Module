@@ -16,6 +16,7 @@ class ChildrenParkFacilitiesView extends StatefulWidget {
 class _ChildrenParkFacilitiesViewState
     extends State<ChildrenParkFacilitiesView> {
   final TextEditingController _searchController = TextEditingController();
+  bool _filterPanelOpen = false;
 
   String _query = '';
   String _sort = 'none';
@@ -40,6 +41,13 @@ class _ChildrenParkFacilitiesViewState
   @override
   Widget build(BuildContext context) {
     final attractions = _filteredAttractions();
+    final hasActiveFilters = _query.isNotEmpty ||
+        _sort != 'none' ||
+        _height.isNotEmpty ||
+        _thrill.isNotEmpty ||
+        _environment.isNotEmpty ||
+        _price.isNotEmpty ||
+        _special.isNotEmpty;
 
     return ChildrenParkShell(
       title: '設施資訊',
@@ -91,84 +99,109 @@ class _ChildrenParkFacilitiesViewState
                       width: 44,
                       height: 44,
                       decoration: BoxDecoration(
-                        color: TPColors.primary700,
+                        color: _filterPanelOpen || hasActiveFilters
+                            ? TPColors.primary700
+                            : TPColors.white,
                         borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: _filterPanelOpen || hasActiveFilters
+                              ? TPColors.primary700
+                              : TPColors.grayscale100,
+                        ),
                       ),
-                      child: const Icon(Icons.tune, color: TPColors.white),
+                      child: IconButton(
+                        onPressed: () {
+                          setState(() {
+                            _filterPanelOpen = !_filterPanelOpen;
+                          });
+                        },
+                        icon: Icon(
+                          Icons.tune,
+                          color: _filterPanelOpen || hasActiveFilters
+                              ? TPColors.white
+                              : TPColors.primary700,
+                        ),
+                      ),
                     ),
                   ],
                 ),
-                const SizedBox(height: 10),
-                SingleChildScrollView(
-                  scrollDirection: Axis.horizontal,
-                  child: Row(
-                    children: [
-                      _filterDropdown(
-                        label: '等待時間',
-                        value: _sort,
-                        options: const ['', 'none', 'asc', 'desc'],
-                        displayText: (value) => switch (value) {
-                          '' || 'none' => '等待時間',
-                          'asc' => '等待時間（最短）',
-                          'desc' => '等待時間（最長）',
-                          _ => value,
-                        },
-                        onChanged: (value) => setState(() => _sort = value),
-                      ),
-                      _filterDropdown(
-                        label: '身高限制',
-                        value: _height,
-                        options: _heightOptions,
-                        onChanged: (value) => setState(() => _height = value),
-                      ),
-                      _filterDropdown(
-                        label: '尖叫指數',
-                        value: _thrill,
-                        options: _thrillOptions,
-                        onChanged: (value) => setState(() => _thrill = value),
-                      ),
-                      _filterDropdown(
-                        label: '室內外',
-                        value: _environment,
-                        options: _environmentOptions,
-                        onChanged: (value) =>
-                            setState(() => _environment = value),
-                      ),
-                      _filterDropdown(
-                        label: '票價/類型',
-                        value: _price,
-                        options: _priceOptions,
-                        onChanged: (value) => setState(() => _price = value),
-                      ),
-                      _filterDropdown(
-                        label: '特殊族群',
-                        value: _special,
-                        options: _specialOptions,
-                        onChanged: (value) => setState(() => _special = value),
-                      ),
-                      const SizedBox(width: 6),
-                      OutlinedButton(
-                        onPressed: () {
-                          setState(() {
-                            _query = '';
-                            _searchController.clear();
-                            _sort = 'none';
-                            _height = '';
-                            _thrill = '';
-                            _environment = '';
-                            _price = '';
-                            _special = '';
-                          });
-                        },
-                        style: OutlinedButton.styleFrom(
-                          minimumSize: const Size(86, 40),
-                          side: const BorderSide(color: TPColors.grayscale100),
+                if (_filterPanelOpen) ...[
+                  const SizedBox(height: 10),
+                  SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: Row(
+                      children: [
+                        _filterDropdown(
+                          label: '等待時間',
+                          value: _sort,
+                          options: const ['', 'none', 'asc', 'desc'],
+                          displayText: (value) => switch (value) {
+                            '' || 'none' => '等待時間',
+                            'asc' => '等待時間（最短）',
+                            'desc' => '等待時間（最長）',
+                            _ => value,
+                          },
+                          onChanged: (value) => setState(() => _sort = value),
                         ),
-                        child: const Text('清除篩選'),
-                      ),
-                    ],
+                        _filterDropdown(
+                          label: '身高限制',
+                          value: _height,
+                          options: _heightOptions,
+                          onChanged: (value) => setState(() => _height = value),
+                        ),
+                        _filterDropdown(
+                          label: '尖叫指數',
+                          value: _thrill,
+                          options: _thrillOptions,
+                          onChanged: (value) => setState(() => _thrill = value),
+                        ),
+                        _filterDropdown(
+                          label: '室內外',
+                          value: _environment,
+                          options: _environmentOptions,
+                          onChanged: (value) =>
+                              setState(() => _environment = value),
+                        ),
+                        _filterDropdown(
+                          label: '票價/類型',
+                          value: _price,
+                          options: _priceOptions,
+                          onChanged: (value) => setState(() => _price = value),
+                        ),
+                        _filterDropdown(
+                          label: '特殊族群',
+                          value: _special,
+                          options: _specialOptions,
+                          onChanged: (value) =>
+                              setState(() => _special = value),
+                        ),
+                        const SizedBox(width: 6),
+                        OutlinedButton(
+                          onPressed: hasActiveFilters
+                              ? () {
+                                  setState(() {
+                                    _query = '';
+                                    _searchController.clear();
+                                    _sort = 'none';
+                                    _height = '';
+                                    _thrill = '';
+                                    _environment = '';
+                                    _price = '';
+                                    _special = '';
+                                  });
+                                }
+                              : null,
+                          style: OutlinedButton.styleFrom(
+                            minimumSize: const Size(86, 40),
+                            side:
+                                const BorderSide(color: TPColors.grayscale100),
+                          ),
+                          child: const Text('清除篩選'),
+                        ),
+                      ],
+                    ),
                   ),
-                ),
+                ],
               ],
             ),
           ),
@@ -249,22 +282,43 @@ class _ChildrenParkFacilitiesViewState
       ),
       child: Row(
         children: [
-          ClipRRect(
-            borderRadius:
-                const BorderRadius.horizontal(left: Radius.circular(11)),
-            child: Image.network(
-              attraction.imageUrl,
-              width: 118,
-              height: 148,
-              fit: BoxFit.cover,
-              errorBuilder: (_, __, ___) => Container(
-                width: 118,
-                height: 148,
-                color: TPColors.grayscale100,
-                alignment: Alignment.center,
-                child: const Icon(Icons.image_not_supported_outlined),
+          Stack(
+            children: [
+              ClipRRect(
+                borderRadius:
+                    const BorderRadius.horizontal(left: Radius.circular(11)),
+                child: Image.network(
+                  attraction.imageUrl,
+                  width: 118,
+                  height: 148,
+                  fit: BoxFit.cover,
+                  errorBuilder: (_, __, ___) => Container(
+                    width: 118,
+                    height: 148,
+                    color: TPColors.grayscale100,
+                    alignment: Alignment.center,
+                    child: const Icon(Icons.image_not_supported_outlined),
+                  ),
+                ),
               ),
-            ),
+              Positioned(
+                left: 8,
+                top: 8,
+                child: Container(
+                  padding: const EdgeInsets.all(5),
+                  decoration: BoxDecoration(
+                    color: TPColors.white.withValues(alpha: 0.92),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: TPColors.grayscale100),
+                  ),
+                  child: Icon(
+                    _iconByCategory(attraction.category),
+                    size: 14,
+                    color: TPColors.primary700,
+                  ),
+                ),
+              ),
+            ],
           ),
           Expanded(
             child: Padding(
@@ -312,9 +366,9 @@ class _ChildrenParkFacilitiesViewState
                     spacing: 6,
                     runSpacing: 6,
                     children: [
-                      _tag('設施',
+                      _tag(_categoryText(attraction.category),
                           bg: const Color(0xFFE6F3FF), fg: TPColors.primary700),
-                      _tag('身高限制 無限制',
+                      _tag('身高限制 ${_restrictionText(attraction)}',
                           bg: const Color(0xFFF3F4F6),
                           fg: TPColors.grayscale700),
                     ],
@@ -327,7 +381,7 @@ class _ChildrenParkFacilitiesViewState
                       const SizedBox(width: 4),
                       Expanded(
                         child: Text(
-                          '${attraction.distanceText} · ${attraction.status}',
+                          '${_areaText(attraction)} · ${_distanceText(attraction)}',
                           style: const TextStyle(
                             fontSize: 11,
                             color: TPColors.grayscale700,
@@ -383,6 +437,48 @@ class _ChildrenParkFacilitiesViewState
         ),
       ),
     );
+  }
+
+  IconData _iconByCategory(ParkCategory category) {
+    return switch (category) {
+      ParkCategory.attraction => Icons.rocket_launch_outlined,
+      ParkCategory.food => Icons.restaurant_outlined,
+      ParkCategory.souvenir => Icons.shopping_bag_outlined,
+      ParkCategory.restroom => Icons.wc_outlined,
+      ParkCategory.family => Icons.child_care_outlined,
+      ParkCategory.transport => Icons.support_agent_outlined,
+      ParkCategory.show => Icons.theaters_outlined,
+    };
+  }
+
+  String _categoryText(ParkCategory category) {
+    return switch (category) {
+      ParkCategory.attraction => '遊樂設施',
+      ParkCategory.food => '美食餐飲',
+      ParkCategory.souvenir => '紀念品店',
+      ParkCategory.restroom => '廁所',
+      ParkCategory.family => '親子服務',
+      ParkCategory.transport => '交通服務',
+      ParkCategory.show => '表演活動',
+    };
+  }
+
+  String _restrictionText(ParkAttraction attraction) {
+    if (attraction.waitMinutes != null && attraction.waitMinutes! > 40) {
+      return '120cm';
+    }
+    if (attraction.waitMinutes != null && attraction.waitMinutes! > 20) {
+      return '110cm';
+    }
+    return '無限制';
+  }
+
+  String _areaText(ParkAttraction attraction) {
+    return attraction.category == ParkCategory.show ? '表演區' : '園區設施';
+  }
+
+  String _distanceText(ParkAttraction attraction) {
+    return attraction.distanceText.replaceAll('距離 ', '');
   }
 
   List<ParkAttraction> _filteredAttractions() {

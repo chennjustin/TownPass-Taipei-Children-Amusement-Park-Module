@@ -91,7 +91,7 @@ class ChildrenParkShell extends StatelessWidget {
 
   Widget _topAppBar() {
     return Container(
-      height: 64,
+      height: 56,
       decoration: const BoxDecoration(
         color: TPColors.white,
         boxShadow: [
@@ -102,48 +102,33 @@ class ChildrenParkShell extends StatelessWidget {
           ),
         ],
       ),
-      child: Column(
-        children: [
-          Container(
-            margin: const EdgeInsets.only(top: 4),
-            width: 100,
-            height: 16,
-            decoration: BoxDecoration(
-              color: Colors.black.withValues(alpha: 0.92),
-              borderRadius: BorderRadius.circular(999),
-            ),
-          ),
-          Expanded(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 12),
-              child: Row(
-                children: [
-                  Assets.svg.logoS.svg(width: 20, height: 20),
-                  const SizedBox(width: 8),
-                  const Expanded(
-                    child: Text(
-                      '台北迪士尼',
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w500,
-                        color: TPColors.primary700,
-                      ),
-                    ),
-                  ),
-                  IconButton(
-                    onPressed: () {},
-                    icon: const Icon(
-                      Icons.notifications_none,
-                      color: TPColors.grayscale700,
-                    ),
-                  ),
-                ],
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 12),
+        child: Row(
+          children: [
+            Assets.svg.logoS.svg(width: 20, height: 20),
+            const SizedBox(width: 8),
+            const Expanded(
+              child: Text(
+                '台北迪士尼',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w500,
+                  color: TPColors.primary700,
+                ),
               ),
             ),
-          ),
-        ],
+            IconButton(
+              onPressed: () {},
+              icon: const Icon(
+                Icons.notifications_none,
+                color: TPColors.grayscale700,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
