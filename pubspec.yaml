@@ -44,6 +44,7 @@ dependencies:
   fluttertoast: ^8.2.8
   get: ^4.6.6
   geolocator: ^13.0.1
+  google_maps_flutter: ^2.12.1
   intl: any
   image_picker: ^1.1.2
   json_annotation: ^4.9.0
@@ -94,6 +95,7 @@ flutter:
     - assets/mock_data/
     - assets/image/
     - assets/svg/
+    - assets/children_park/map/
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/assets-and-images/#resolution-aware

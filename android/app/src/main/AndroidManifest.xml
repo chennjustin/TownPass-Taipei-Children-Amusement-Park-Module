@@ -31,6 +31,9 @@
         <meta-data
             android:name="flutterEmbedding"
             android:value="2" />
+        <meta-data
+            android:name="com.google.android.geo.API_KEY"
+            android:value="${googleMapsApiKey}" />
         <provider
             android:name="androidx.core.content.FileProvider"
             android:authorities="com.example.townpass.flutter_inappwebview_android.fileprovider"

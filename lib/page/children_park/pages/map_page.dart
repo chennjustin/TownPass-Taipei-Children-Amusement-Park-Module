@@ -1,477 +1,600 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:town_pass/page/children_park/children_park_controller.dart';
-import 'package:town_pass/page/children_park/model/children_park_models.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:town_pass/page/children_park/map/children_park_map_constants.dart';
+import 'package:town_pass/page/children_park/map/children_park_map_controller.dart';
+import 'package:town_pass/page/children_park/map/children_park_map_helpers.dart';
+import 'package:town_pass/page/children_park/map/children_park_map_models.dart';
 import 'package:town_pass/util/tp_colors.dart';
 
-class ChildrenParkMapPage extends GetView<ChildrenParkController> {
+class ChildrenParkMapPage extends GetView<ChildrenParkMapController> {
   const ChildrenParkMapPage({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final selectedAttraction = controller.attractions.first;
-    return Stack(
-      children: [
-        _MapCanvas(controller: controller),
-        Positioned(
-          left: 12,
-          right: 12,
-          top: 10,
-          child: _TopControls(controller: controller),
-        ),
-        Positioned(
-          right: 12,
-          bottom: 226,
-          child: InkWell(
-            borderRadius: BorderRadius.circular(999),
-            onTap: () {},
-            child: Ink(
-              width: 46,
-              height: 46,
-              decoration: BoxDecoration(
-                color: TPColors.white,
-                borderRadius: BorderRadius.circular(999),
-                boxShadow: const [
-                  BoxShadow(
-                    color: Color(0x26000000),
-                    blurRadius: 10,
-                    offset: Offset(0, 3),
-                  ),
-                ],
+    return Obx(() {
+      if (controller.isLoading.value) {
+        return const Center(
+          child: CircularProgressIndicator(color: TPColors.primary700),
+        );
+      }
+
+      return Stack(
+        children: [
+          Obx(
+            () => GoogleMap(
+              initialCameraPosition: const CameraPosition(
+                target: ChildrenParkMapConstants.parkCenter,
+                zoom: ChildrenParkMapConstants.initialZoom,
               ),
-              child: const Icon(Icons.gps_fixed, color: TPColors.grayscale700),
+              minMaxZoomPreference: const MinMaxZoomPreference(
+                ChildrenParkMapConstants.minZoom,
+                null,
+              ),
+              cameraTargetBounds: CameraTargetBounds(
+                ChildrenParkMapConstants.parkBounds,
+              ),
+              onMapCreated: (mapController) => controller.onMapCreated(
+                mapController,
+                createLocalImageConfiguration(context),
+              ),
+              markers: controller.markers.value,
+              groundOverlays: controller.groundOverlays.value,
+              onCameraMove: controller.onCameraMove,
+              onCameraIdle: controller.onCameraIdle,
+              myLocationButtonEnabled: false,
+              zoomControlsEnabled: false,
+              mapToolbarEnabled: false,
+              compassEnabled: false,
             ),
           ),
-        ),
-        Positioned(
-          left: 12,
-          right: 12,
-          bottom: 8,
-          child: _AttractionBottomSheet(attraction: selectedAttraction),
-        ),
-      ],
-    );
-  }
-}
-
-class _MapCanvas extends StatelessWidget {
-  final ChildrenParkController controller;
-
-  const _MapCanvas({required this.controller});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [Color(0xFFE9F8FF), Color(0xFFF6FBFF)],
-        ),
-      ),
-      child: LayoutBuilder(
-        builder: (_, constraints) {
-          return Stack(
-            children: [
-              ...List.generate(
-                8,
-                (index) => Positioned(
-                  left: 20 + (index * 48),
-                  top: 95 + (index % 3) * 42,
-                  child: Container(
-                    width: 36,
-                    height: 10,
-                    decoration: BoxDecoration(
-                      color: TPColors.white.withValues(alpha: 0.52),
-                      borderRadius: BorderRadius.circular(999),
-                    ),
-                  ),
-                ),
-              ),
-              ...controller.attractions.take(8).toList().asMap().entries.map(
-                    (entry) => Positioned(
-                      left: constraints.maxWidth * entry.value.mapX - 22,
-                      top: constraints.maxHeight * entry.value.mapY - 35,
-                      child: _MapMarker(
-                        waitLabel: entry.value.waitLabel,
-                        icon:
-                            entry.key == 0 ? Icons.rocket_launch : Icons.place,
-                        isPrimary: entry.key == 0,
-                      ),
-                    ),
-                  ),
-            ],
-          );
-        },
-      ),
-    );
-  }
-}
-
-class _MapMarker extends StatelessWidget {
-  final String waitLabel;
-  final IconData icon;
-  final bool isPrimary;
-
-  const _MapMarker({
-    required this.waitLabel,
-    required this.icon,
-    this.isPrimary = false,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      children: [
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-          decoration: BoxDecoration(
-            color: isPrimary ? TPColors.primary700 : TPColors.white,
-            borderRadius: BorderRadius.circular(999),
-            border: Border.all(
-              color: isPrimary ? TPColors.primary700 : TPColors.grayscale100,
-            ),
+          Positioned(
+            left: 12,
+            right: 12,
+            top: 8,
+            child: _TopControls(controller: controller),
           ),
-          child: Text(
-            waitLabel,
-            style: TextStyle(
-              color: isPrimary ? TPColors.white : TPColors.grayscale700,
-              fontSize: 10,
-              fontWeight: FontWeight.w700,
-            ),
+          Positioned(
+            right: 12,
+            bottom: 210,
+            child: _GpsButton(onTap: controller.recenterPark),
           ),
-        ),
-        const SizedBox(height: 4),
-        Container(
-          width: isPrimary ? 36 : 30,
-          height: isPrimary ? 36 : 30,
-          decoration: BoxDecoration(
-            color: TPColors.primary700,
-            shape: BoxShape.circle,
-            border: Border.all(color: TPColors.white, width: 2),
-            boxShadow: const [
-              BoxShadow(
-                color: Color(0x28000000),
-                blurRadius: 8,
-                offset: Offset(0, 2),
-              ),
-            ],
+          Positioned(
+            left: 12,
+            right: 12,
+            bottom: 8,
+            child: _BottomCarousel(controller: controller),
           ),
-          child: Icon(
-            icon,
-            color: TPColors.white,
-            size: isPrimary ? 18 : 14,
-          ),
-        ),
-      ],
-    );
+        ],
+      );
+    });
   }
 }
 
 class _TopControls extends StatelessWidget {
-  final ChildrenParkController controller;
+  final ChildrenParkMapController controller;
 
   const _TopControls({required this.controller});
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      children: [
-        Row(
-          children: [
-            Expanded(
-              child: Container(
-                height: 44,
-                padding: const EdgeInsets.symmetric(horizontal: 10),
-                decoration: BoxDecoration(
-                  color: TPColors.white,
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: TPColors.grayscale100),
-                ),
-                child: const Row(
-                  children: [
-                    Icon(Icons.search, size: 18, color: TPColors.grayscale700),
-                    SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        '搜尋設施或表演...',
-                        style: TextStyle(color: TPColors.grayscale700),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            const SizedBox(width: 8),
-            Container(
-              width: 44,
-              height: 44,
-              decoration: BoxDecoration(
-                color: TPColors.white,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: TPColors.grayscale100),
-              ),
-              child: const Icon(Icons.tune, color: TPColors.primary700),
-            ),
-          ],
-        ),
-        const SizedBox(height: 10),
-        SizedBox(
-          height: 34,
-          child: Obx(
-            () => ListView.separated(
-              scrollDirection: Axis.horizontal,
-              itemBuilder: (_, index) {
-                final selected =
-                    controller.selectedCategoryIndex.value == index;
-                return GestureDetector(
-                  onTap: () => controller.selectedCategoryIndex.value = index,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12),
-                    alignment: Alignment.center,
-                    decoration: BoxDecoration(
-                      color: selected ? TPColors.primary700 : TPColors.white,
-                      borderRadius: BorderRadius.circular(999),
-                      border: Border.all(
-                        color: selected
-                            ? TPColors.primary700
-                            : TPColors.grayscale100,
-                      ),
-                    ),
-                    child: Text(
-                      controller.mapCategories[index],
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                        color:
-                            selected ? TPColors.white : TPColors.grayscale700,
-                      ),
-                    ),
-                  ),
-                );
-              },
-              separatorBuilder: (_, __) => const SizedBox(width: 8),
-              itemCount: controller.mapCategories.length,
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class _AttractionBottomSheet extends StatelessWidget {
-  final ParkAttraction attraction;
-
-  const _AttractionBottomSheet({required this.attraction});
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.fromLTRB(14, 8, 14, 14),
-      decoration: const BoxDecoration(
-        color: TPColors.white,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(18)),
-        boxShadow: [
-          BoxShadow(
-            color: Color(0x26000000),
-            blurRadius: 14,
-            offset: Offset(0, -4),
-          ),
-        ],
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Center(
-            child: SizedBox(
-              width: 34,
-              child: Divider(
-                thickness: 4,
-                color: TPColors.grayscale100,
-              ),
-            ),
-          ),
-          const SizedBox(height: 4),
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Row(
-                      children: [
-                        _MiniTag(text: '冒險區'),
-                        SizedBox(width: 6),
-                        Text(
-                          '已開放',
-                          style: TextStyle(
-                            fontSize: 11,
-                            color: TPColors.grayscale700,
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 5),
-                    Text(
-                      attraction.name,
-                      style: const TextStyle(
-                        fontSize: 22,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  Text(
-                    '${attraction.waitMinutes ?? '--'}',
-                    style: const TextStyle(
-                      fontSize: 30,
-                      fontWeight: FontWeight.w700,
-                      color: TPColors.primary700,
-                      height: 1,
-                    ),
-                  ),
-                  const Text(
-                    '分鐘等候',
-                    style:
-                        TextStyle(fontSize: 11, color: TPColors.grayscale700),
-                  ),
-                ],
-              ),
-            ],
-          ),
-          const SizedBox(height: 10),
-          Row(
-            children: [
-              Expanded(
-                child: _infoCard(
-                  icon: Icons.height,
-                  title: '身高限制',
-                  value: '110cm 以上',
-                  iconColor: TPColors.primary700,
-                ),
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: _infoCard(
-                  icon: Icons.confirmation_num_outlined,
-                  title: '通行證',
-                  value: '適用快通',
-                  iconColor: const Color(0xFF9C6200),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 10),
-          Row(
-            children: [
-              Expanded(
-                child: FilledButton.icon(
-                  onPressed: () {},
-                  icon: const Icon(Icons.navigation_outlined),
-                  label: const Text('立即前往'),
-                ),
-              ),
-              const SizedBox(width: 10),
-              SizedBox(
-                width: 48,
-                height: 48,
-                child: OutlinedButton(
-                  onPressed: () {},
-                  style: OutlinedButton.styleFrom(
-                    padding: EdgeInsets.zero,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
-                  child: const Icon(Icons.bookmark_border),
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _infoCard({
-    required IconData icon,
-    required String title,
-    required String value,
-    required Color iconColor,
-  }) {
-    return Container(
-      padding: const EdgeInsets.all(10),
-      decoration: BoxDecoration(
-        color: const Color(0xFFF4F5F7),
-        borderRadius: BorderRadius.circular(10),
-      ),
-      child: Row(
+    return Obx(
+      () => Column(
         children: [
           Container(
-            width: 32,
-            height: 32,
+            padding: const EdgeInsets.all(4),
             decoration: BoxDecoration(
               color: TPColors.white,
-              borderRadius: BorderRadius.circular(8),
+              borderRadius: BorderRadius.circular(12),
               border: Border.all(color: TPColors.grayscale100),
+              boxShadow: const [
+                BoxShadow(
+                  color: Color(0x140B0D0E),
+                  blurRadius: 8,
+                  offset: Offset(0, 2),
+                ),
+              ],
             ),
-            child: Icon(icon, size: 18, color: iconColor),
-          ),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+            child: Row(
               children: [
-                Text(
-                  title,
-                  style: const TextStyle(
-                    fontSize: 11,
-                    color: TPColors.grayscale700,
+                _contentTypeTab(
+                  label: '遊樂設施',
+                  icon: Icons.attractions_outlined,
+                  type: ChildrenParkMapContentType.facility,
+                ),
+                _contentTypeTab(
+                  label: '餐廳',
+                  icon: Icons.restaurant_outlined,
+                  type: ChildrenParkMapContentType.restaurant,
+                ),
+                _contentTypeTab(
+                  label: '商店',
+                  icon: Icons.shopping_bag_outlined,
+                  type: ChildrenParkMapContentType.shop,
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              Expanded(
+                child: Container(
+                  height: 44,
+                  decoration: BoxDecoration(
+                    color: TPColors.white,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: TPColors.grayscale100),
+                    boxShadow: const [
+                      BoxShadow(
+                        color: Color(0x140B0D0E),
+                        blurRadius: 8,
+                        offset: Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                  child: TextField(
+                    onChanged: controller.onQueryChanged,
+                    decoration: const InputDecoration(
+                      prefixIcon: Icon(Icons.search, size: 18),
+                      hintText: '搜尋設施、餐廳或類型',
+                      hintStyle: TextStyle(fontSize: 14),
+                      border: InputBorder.none,
+                      contentPadding: EdgeInsets.symmetric(vertical: 12),
+                    ),
                   ),
                 ),
+              ),
+              if (controller.selectedContentType.value ==
+                  ChildrenParkMapContentType.facility) ...[
+                const SizedBox(width: 8),
+                Material(
+                  color: controller.filterPanelOpen.value ||
+                          controller.rideFilters.value.activeCount > 0
+                      ? TPColors.primary700
+                      : TPColors.white,
+                  borderRadius: BorderRadius.circular(12),
+                  child: InkWell(
+                    onTap: () => controller.filterPanelOpen.value =
+                        !controller.filterPanelOpen.value,
+                    borderRadius: BorderRadius.circular(12),
+                    child: Container(
+                      width: 44,
+                      height: 44,
+                      alignment: Alignment.center,
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: controller.filterPanelOpen.value ||
+                                  controller.rideFilters.value.activeCount > 0
+                              ? TPColors.primary700
+                              : TPColors.grayscale100,
+                        ),
+                      ),
+                      child: Icon(
+                        Icons.tune,
+                        color: controller.filterPanelOpen.value ||
+                                controller.rideFilters.value.activeCount > 0
+                            ? TPColors.white
+                            : TPColors.primary700,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ],
+          ),
+          if (controller.filterPanelOpen.value &&
+              controller.selectedContentType.value ==
+                  ChildrenParkMapContentType.facility)
+            _FilterPanel(controller: controller),
+        ],
+      ),
+    );
+  }
+
+  Widget _contentTypeTab({
+    required String label,
+    required IconData icon,
+    required ChildrenParkMapContentType type,
+  }) {
+    final selected = controller.selectedContentType.value == type;
+    return Expanded(
+      child: Material(
+        color: selected ? TPColors.primary700 : Colors.transparent,
+        borderRadius: BorderRadius.circular(8),
+        child: InkWell(
+          onTap: () => controller.selectContentType(type),
+          borderRadius: BorderRadius.circular(8),
+          child: SizedBox(
+            height: 40,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  icon,
+                  size: 16,
+                  color: selected ? TPColors.white : TPColors.grayscale600,
+                ),
+                const SizedBox(width: 4),
                 Text(
-                  value,
-                  style: const TextStyle(
+                  label,
+                  style: TextStyle(
+                    fontSize: 12,
                     fontWeight: FontWeight.w700,
-                    fontSize: 13,
+                    color: selected ? TPColors.white : TPColors.grayscale600,
                   ),
                 ),
               ],
             ),
           ),
+        ),
+      ),
+    );
+  }
+}
+
+class _FilterPanel extends StatelessWidget {
+  final ChildrenParkMapController controller;
+
+  const _FilterPanel({required this.controller});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.only(top: 8),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: TPColors.white.withValues(alpha: 0.96),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: TPColors.grayscale100),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x1A0B0D0E),
+            blurRadius: 12,
+            offset: Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Obx(
+        () => Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _filterGroup(
+              '身高限制',
+              'height',
+              ChildrenParkMapConstants.heightFilterOptions,
+            ),
+            const SizedBox(height: 10),
+            _filterGroup(
+              '尖叫指數',
+              'thrill',
+              ChildrenParkMapConstants.thrillFilterOptions,
+            ),
+            const SizedBox(height: 10),
+            _filterGroup(
+              '室內外',
+              'environment',
+              ChildrenParkMapConstants.environmentFilterOptions,
+            ),
+            const SizedBox(height: 10),
+            _filterGroup(
+              '票價 / 類型',
+              'price',
+              ChildrenParkMapConstants.priceFilterOptions,
+            ),
+            const SizedBox(height: 10),
+            _filterGroup(
+              '特殊族群',
+              'special',
+              ChildrenParkMapConstants.specialFilterOptions,
+            ),
+            const SizedBox(height: 10),
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    controller.rideFilters.value.activeCount > 0
+                        ? '已套用 ${controller.rideFilters.value.activeCount} 個篩選'
+                        : '尚未套用篩選',
+                    style: const TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: TPColors.grayscale500,
+                    ),
+                  ),
+                ),
+                TextButton(
+                  onPressed: controller.clearRideFilters,
+                  child: const Text(
+                    '清除篩選',
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: TPColors.primary700,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _filterGroup(String label, String key, List<String> options) {
+    final filters = controller.rideFilters.value;
+    final selectedValues = switch (key) {
+      'height' => filters.height,
+      'thrill' => filters.thrill,
+      'environment' => filters.environment,
+      'price' => filters.price,
+      'special' => filters.special,
+      _ => <String>[],
+    };
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: const TextStyle(
+            fontSize: 12,
+            fontWeight: FontWeight.w700,
+            color: TPColors.grayscale500,
+          ),
+        ),
+        const SizedBox(height: 6),
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: options.map((option) {
+            final selected = selectedValues.contains(option);
+            return FilterChip(
+              label: Text(option, style: const TextStyle(fontSize: 12)),
+              selected: selected,
+              onSelected: (_) => controller.toggleRideFilter(key, option),
+              selectedColor: TPColors.primary700,
+              checkmarkColor: TPColors.white,
+              labelStyle: TextStyle(
+                color: selected ? TPColors.white : TPColors.grayscale700,
+                fontWeight: FontWeight.w600,
+              ),
+              side: BorderSide(
+                color: selected ? TPColors.primary700 : TPColors.grayscale100,
+              ),
+              backgroundColor: TPColors.white,
+            );
+          }).toList(),
+        ),
+      ],
+    );
+  }
+}
+
+class _GpsButton extends StatelessWidget {
+  final VoidCallback onTap;
+
+  const _GpsButton({required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: TPColors.white,
+      shape: const CircleBorder(),
+      elevation: 3,
+      child: InkWell(
+        onTap: onTap,
+        customBorder: const CircleBorder(),
+        child: const SizedBox(
+          width: 46,
+          height: 46,
+          child: Icon(Icons.gps_fixed, color: TPColors.grayscale700),
+        ),
+      ),
+    );
+  }
+}
+
+class _BottomCarousel extends StatelessWidget {
+  final ChildrenParkMapController controller;
+
+  const _BottomCarousel({required this.controller});
+
+  @override
+  Widget build(BuildContext context) {
+    return Obx(() {
+      final selected = controller.selectedPoint.value;
+      if (selected != null) {
+        return _DetailCard(
+          point: selected,
+          onClose: controller.closePointDetail,
+        );
+      }
+
+      final point = controller.carouselPoint;
+      if (point == null) {
+        return Container(
+          padding: const EdgeInsets.all(16),
+          decoration: _cardDecoration,
+          child: Text(
+            controller.statusText.value,
+            style: const TextStyle(
+              fontSize: 13,
+              color: TPColors.grayscale600,
+            ),
+          ),
+        );
+      }
+
+      final points = controller.visiblePoints;
+      return Container(
+        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 12),
+        decoration: _cardDecoration,
+        child: Row(
+          children: [
+            IconButton(
+              onPressed: controller.carouselIndex <= 0
+                  ? null
+                  : () => controller.scrollCarouselBy(-1),
+              icon:
+                  const Icon(Icons.chevron_left, color: TPColors.grayscale400),
+            ),
+            Expanded(
+              child: GestureDetector(
+                onTap: () => controller.showPointDetail(point),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Container(
+                          width: 10,
+                          height: 10,
+                          decoration: BoxDecoration(
+                            color: point.pointType ==
+                                    ChildrenParkMapPointType.facility
+                                ? TPColors.primary700
+                                : const Color(0xFFE53935),
+                            shape: BoxShape.circle,
+                          ),
+                        ),
+                        const SizedBox(width: 6),
+                        Text(
+                          getPointLabel(point.pointType),
+                          style: const TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w700,
+                            color: TPColors.grayscale500,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      point.name,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        color: TPColors.grayscale900,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      point.pointType == ChildrenParkMapPointType.facility
+                          ? '等待 ${getFacilityWaitMinutes(point)} 分鐘'
+                          : point.category,
+                      style: const TextStyle(
+                        fontSize: 12,
+                        color: TPColors.grayscale500,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            IconButton(
+              onPressed: controller.carouselIndex >= points.length - 1
+                  ? null
+                  : () => controller.scrollCarouselBy(1),
+              icon:
+                  const Icon(Icons.chevron_right, color: TPColors.grayscale400),
+            ),
+          ],
+        ),
+      );
+    });
+  }
+}
+
+class _DetailCard extends StatelessWidget {
+  final ChildrenParkMapPoint point;
+  final VoidCallback onClose;
+
+  const _DetailCard({required this.point, required this.onClose});
+
+  @override
+  Widget build(BuildContext context) {
+    final wait = point.pointType == ChildrenParkMapPointType.facility
+        ? getFacilityWaitMinutes(point)
+        : null;
+    return Container(
+      padding: const EdgeInsets.fromLTRB(14, 10, 14, 14),
+      decoration: _cardDecoration,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Row(
+            children: [
+              const Expanded(child: SizedBox()),
+              IconButton(
+                onPressed: onClose,
+                icon: const Icon(Icons.close, size: 20),
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(minWidth: 28, minHeight: 28),
+              ),
+            ],
+          ),
+          Row(
+            children: [
+              Container(
+                width: 10,
+                height: 10,
+                decoration: const BoxDecoration(
+                  color: TPColors.primary700,
+                  shape: BoxShape.circle,
+                ),
+              ),
+              const SizedBox(width: 6),
+              Text(
+                getPointLabel(point.pointType),
+                style: const TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w700,
+                  color: TPColors.grayscale500,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 4),
+          Text(
+            point.name,
+            style: const TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.w600,
+              color: TPColors.grayscale900,
+            ),
+          ),
+          if (wait != null) ...[
+            const SizedBox(height: 6),
+            Text(
+              '等待 $wait 分鐘',
+              style: const TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                color: TPColors.primary700,
+              ),
+            ),
+          ],
         ],
       ),
     );
   }
 }
 
-class _MiniTag extends StatelessWidget {
-  final String text;
-
-  const _MiniTag({required this.text});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-      decoration: BoxDecoration(
-        color: const Color(0xFFE6F3FF),
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Text(
-        text,
-        style: const TextStyle(
-          fontSize: 10,
-          color: TPColors.primary700,
-          fontWeight: FontWeight.w700,
-        ),
-      ),
-    );
-  }
-}
+const _cardDecoration = BoxDecoration(
+  color: Color(0xF5FFFFFF),
+  borderRadius: BorderRadius.all(Radius.circular(12)),
+  border: Border.fromBorderSide(BorderSide(color: TPColors.grayscale100)),
+  boxShadow: [
+    BoxShadow(
+      color: Color(0x1A0B0D0E),
+      blurRadius: 12,
+      offset: Offset(0, -2),
+    ),
+  ],
+);
