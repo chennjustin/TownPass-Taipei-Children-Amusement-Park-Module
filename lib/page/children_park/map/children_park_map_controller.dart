@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:math' as math;
 import 'dart:ui' as ui;
 
@@ -28,6 +29,7 @@ class ChildrenParkMapController extends GetxController {
   final Rx<Set<Marker>> markers = Rx<Set<Marker>>({});
   final Rx<Set<GroundOverlay>> groundOverlays = Rx<Set<GroundOverlay>>({});
   final Rxn<LatLng> userPosition = Rxn<LatLng>();
+  final RxDouble userHeading = 0.0.obs;
 
   GoogleMapController? mapController;
   List<ChildrenParkMapPoint> allPoints = [];
@@ -44,6 +46,7 @@ class ChildrenParkMapController extends GetxController {
   bool _pendingOpenDetail = false;
   CameraPosition? _lastCameraPosition;
   bool _isAdjustingCamera = false;
+  StreamSubscription<Position>? _locationStreamSubscription;
 
   @override
   void onInit() {
@@ -53,6 +56,8 @@ class ChildrenParkMapController extends GetxController {
 
   @override
   void onClose() {
+    _locationStreamSubscription?.cancel();
+    _locationStreamSubscription = null;
     mapController?.dispose();
     super.onClose();
   }
@@ -417,6 +422,8 @@ class ChildrenParkMapController extends GetxController {
           icon: userLocationIcon ??
               BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueAzure),
           anchor: const Offset(0.5, 0.5),
+          flat: true,
+          rotation: userHeading.value,
           zIndexInt: 5000,
         ),
       );
@@ -678,6 +685,24 @@ class ChildrenParkMapController extends GetxController {
 
       final position = await Geolocator.getCurrentPosition();
       userPosition.value = LatLng(position.latitude, position.longitude);
+      final heading = position.heading;
+      if (!heading.isNaN && heading >= 0 && heading <= 360) {
+        userHeading.value = heading;
+      }
+      _locationStreamSubscription?.cancel();
+      _locationStreamSubscription = Geolocator.getPositionStream(
+        locationSettings: const LocationSettings(
+          accuracy: LocationAccuracy.bestForNavigation,
+          distanceFilter: 1,
+        ),
+      ).listen((position) {
+        userPosition.value = LatLng(position.latitude, position.longitude);
+        final heading = position.heading;
+        if (!heading.isNaN && heading >= 0 && heading <= 360) {
+          userHeading.value = heading;
+        }
+        _rebuildMarkers();
+      });
       _rebuildMarkers();
     } catch (_) {
       // Ignore location failures and keep map usable.
@@ -737,8 +762,15 @@ class ChildrenParkMapController extends GetxController {
     final haloPaint = Paint()..color = const Color(0x553B82F6);
     final whiteRingPaint = Paint()..color = Colors.white;
     final corePaint = Paint()..color = const Color(0xFF2563EB);
+    final pointerPaint = Paint()..color = const Color(0xFF2563EB);
 
     canvas.drawCircle(center, 20, haloPaint);
+    final pointerPath = Path()
+      ..moveTo(center.dx, 8)
+      ..lineTo(center.dx - 7, 21)
+      ..lineTo(center.dx + 7, 21)
+      ..close();
+    canvas.drawPath(pointerPath, pointerPaint);
     canvas.drawCircle(center, 11, whiteRingPaint);
     canvas.drawCircle(center, 7.5, corePaint);
 
