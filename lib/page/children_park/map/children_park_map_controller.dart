@@ -13,7 +13,7 @@ import 'package:town_pass/page/children_park/map/children_park_map_models.dart';
 class ChildrenParkMapController extends GetxController {
   static const double _pointIconCollisionRadiusPx = 22;
   static const double _clusterIconCollisionRadiusPx = 23;
-  static const double _mergeOverlapThreshold = 0.70;
+  static const double _mergeOverlapThreshold = 0.40;
 
   final RxBool isLoading = true.obs;
   final RxString statusText = '地圖初始化中...'.obs;
@@ -173,9 +173,6 @@ class ChildrenParkMapController extends GetxController {
     selectedContentType.value = type;
     selectedPoint.value = null;
     filterPanelOpen.value = false;
-    if (type != ChildrenParkMapContentType.facility) {
-      rideFilters.value = const ChildrenParkRideFilters();
-    }
     _rebuildMarkers();
     final points = visiblePoints;
     activeCarouselPointId.value = points.isNotEmpty ? points.first.id : null;
@@ -205,7 +202,6 @@ class ChildrenParkMapController extends GetxController {
   void clearRideFilters() {
     rideFilters.value = const ChildrenParkRideFilters();
     query.value = '';
-    selectedContentType.value = ChildrenParkMapContentType.facility;
     _rebuildMarkers();
   }
 
@@ -277,7 +273,11 @@ class ChildrenParkMapController extends GetxController {
   }
 
   void onMarkerTapped(ChildrenParkMapPoint point) {
-    focusPoint(point, animate: true);
+    // Direct marker tap should only change active item state.
+    // Camera zoom/pan is controlled by carousel interactions.
+    activeCarouselPointId.value = point.id;
+    selectedPoint.value = null;
+    _rebuildMarkers();
   }
 
   void recenterPark() {

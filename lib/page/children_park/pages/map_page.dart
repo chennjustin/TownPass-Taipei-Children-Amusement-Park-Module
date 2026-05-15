@@ -145,52 +145,56 @@ class _TopControls extends StatelessWidget {
                   ),
                 ),
               ),
-              if (controller.selectedContentType.value ==
-                  ChildrenParkMapContentType.facility) ...[
-                const SizedBox(width: 8),
-                Material(
-                  color: controller.filterPanelOpen.value ||
-                          controller.rideFilters.value.activeCount > 0
-                      ? TPColors.primary700
-                      : TPColors.white,
+              const SizedBox(width: 8),
+              Material(
+                color: controller.filterPanelOpen.value ||
+                        controller.rideFilters.value.activeCount > 0
+                    ? TPColors.primary700
+                    : TPColors.white,
+                borderRadius: BorderRadius.circular(12),
+                child: InkWell(
+                  onTap: () => _openFilterSheet(context),
                   borderRadius: BorderRadius.circular(12),
-                  child: InkWell(
-                    onTap: () => controller.filterPanelOpen.value =
-                        !controller.filterPanelOpen.value,
-                    borderRadius: BorderRadius.circular(12),
-                    child: Container(
-                      width: 44,
-                      height: 44,
-                      alignment: Alignment.center,
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(
-                          color: controller.filterPanelOpen.value ||
-                                  controller.rideFilters.value.activeCount > 0
-                              ? TPColors.primary700
-                              : TPColors.grayscale100,
-                        ),
-                      ),
-                      child: Icon(
-                        Icons.tune,
+                  child: Container(
+                    width: 44,
+                    height: 44,
+                    alignment: Alignment.center,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
                         color: controller.filterPanelOpen.value ||
                                 controller.rideFilters.value.activeCount > 0
-                            ? TPColors.white
-                            : TPColors.primary700,
+                            ? TPColors.primary700
+                            : TPColors.grayscale100,
                       ),
+                    ),
+                    child: Icon(
+                      Icons.tune,
+                      color: controller.filterPanelOpen.value ||
+                              controller.rideFilters.value.activeCount > 0
+                          ? TPColors.white
+                          : TPColors.primary700,
                     ),
                   ),
                 ),
-              ],
+              ),
             ],
           ),
-          if (controller.filterPanelOpen.value &&
-              controller.selectedContentType.value ==
-                  ChildrenParkMapContentType.facility)
-            _FilterPanel(controller: controller),
         ],
       ),
     );
+  }
+
+  Future<void> _openFilterSheet(BuildContext context) async {
+    if (controller.filterPanelOpen.value) return;
+    controller.filterPanelOpen.value = true;
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (sheetContext) => _FilterBottomSheet(controller: controller),
+    );
+    controller.filterPanelOpen.value = false;
   }
 
   Widget _contentTypeTab({
@@ -234,90 +238,119 @@ class _TopControls extends StatelessWidget {
   }
 }
 
-class _FilterPanel extends StatelessWidget {
+class _FilterBottomSheet extends StatelessWidget {
   final ChildrenParkMapController controller;
 
-  const _FilterPanel({required this.controller});
+  const _FilterBottomSheet({required this.controller});
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.only(top: 8),
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: TPColors.white.withValues(alpha: 0.96),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: TPColors.grayscale100),
-        boxShadow: const [
-          BoxShadow(
-            color: Color(0x1A0B0D0E),
-            blurRadius: 12,
-            offset: Offset(0, 4),
+    return SafeArea(
+      top: false,
+      child: FractionallySizedBox(
+        heightFactor: 0.72,
+        child: Container(
+          margin: const EdgeInsets.fromLTRB(12, 12, 12, 12),
+          padding: const EdgeInsets.fromLTRB(12, 8, 12, 12),
+          decoration: BoxDecoration(
+            color: TPColors.white,
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: const [
+              BoxShadow(
+                color: Color(0x260B0D0E),
+                blurRadius: 16,
+                offset: Offset(0, 4),
+              ),
+            ],
           ),
-        ],
-      ),
-      child: Obx(
-        () => Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _filterGroup(
-              '身高限制',
-              'height',
-              ChildrenParkMapConstants.heightFilterOptions,
-            ),
-            const SizedBox(height: 10),
-            _filterGroup(
-              '尖叫指數',
-              'thrill',
-              ChildrenParkMapConstants.thrillFilterOptions,
-            ),
-            const SizedBox(height: 10),
-            _filterGroup(
-              '室內外',
-              'environment',
-              ChildrenParkMapConstants.environmentFilterOptions,
-            ),
-            const SizedBox(height: 10),
-            _filterGroup(
-              '票價 / 類型',
-              'price',
-              ChildrenParkMapConstants.priceFilterOptions,
-            ),
-            const SizedBox(height: 10),
-            _filterGroup(
-              '特殊族群',
-              'special',
-              ChildrenParkMapConstants.specialFilterOptions,
-            ),
-            const SizedBox(height: 10),
-            Row(
+          child: Obx(
+            () => Column(
               children: [
-                Expanded(
-                  child: Text(
-                    controller.rideFilters.value.activeCount > 0
-                        ? '已套用 ${controller.rideFilters.value.activeCount} 個篩選'
-                        : '尚未套用篩選',
-                    style: const TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                      color: TPColors.grayscale500,
+                Row(
+                  children: [
+                    const Expanded(
+                      child: Text(
+                        '地圖篩選',
+                        style: TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w700,
+                          color: TPColors.grayscale900,
+                        ),
+                      ),
                     ),
+                    IconButton(
+                      onPressed: () => Navigator.of(context).pop(),
+                      icon: const Icon(Icons.close, size: 20),
+                      visualDensity: VisualDensity.compact,
+                    ),
+                  ],
+                ),
+                Expanded(
+                  child: ListView(
+                    children: [
+                      _filterGroup(
+                        '身高限制',
+                        'height',
+                        ChildrenParkMapConstants.heightFilterOptions,
+                      ),
+                      const SizedBox(height: 8),
+                      _filterGroup(
+                        '尖叫指數',
+                        'thrill',
+                        ChildrenParkMapConstants.thrillFilterOptions,
+                      ),
+                      const SizedBox(height: 8),
+                      _filterGroup(
+                        '室內外',
+                        'environment',
+                        ChildrenParkMapConstants.environmentFilterOptions,
+                      ),
+                      const SizedBox(height: 8),
+                      _filterGroup(
+                        '票價 / 類型',
+                        'price',
+                        ChildrenParkMapConstants.priceFilterOptions,
+                      ),
+                      const SizedBox(height: 8),
+                      _filterGroup(
+                        '特殊族群',
+                        'special',
+                        ChildrenParkMapConstants.specialFilterOptions,
+                      ),
+                    ],
                   ),
                 ),
-                TextButton(
-                  onPressed: controller.clearRideFilters,
-                  child: const Text(
-                    '清除篩選',
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                      color: TPColors.primary700,
+                const SizedBox(height: 8),
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        controller.rideFilters.value.activeCount > 0
+                            ? '已套用 ${controller.rideFilters.value.activeCount} 個篩選'
+                            : '尚未套用篩選',
+                        style: const TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: TPColors.grayscale500,
+                        ),
+                      ),
                     ),
-                  ),
+                    TextButton(
+                      onPressed: controller.clearRideFilters,
+                      child: const Text(
+                        '清除',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w700,
+                          color: TPColors.primary700,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),
-          ],
+          ),
         ),
       ),
     );
@@ -334,41 +367,57 @@ class _FilterPanel extends StatelessWidget {
       _ => <String>[],
     };
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          label,
-          style: const TextStyle(
-            fontSize: 12,
-            fontWeight: FontWeight.w700,
-            color: TPColors.grayscale500,
+    return Container(
+      decoration: BoxDecoration(
+        color: TPColors.grayscale50,
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Theme(
+        data: Theme.of(Get.context!).copyWith(
+          dividerColor: Colors.transparent,
+        ),
+        child: ExpansionTile(
+          tilePadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
+          childrenPadding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
+          title: Text(
+            label,
+            style: const TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w700,
+              color: TPColors.grayscale700,
+            ),
           ),
+          subtitle: Text(
+            selectedValues.isEmpty ? '未選擇' : '${selectedValues.length} 項',
+            style: const TextStyle(fontSize: 11, color: TPColors.grayscale500),
+          ),
+          children: [
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: options.map((option) {
+                final selected = selectedValues.contains(option);
+                return FilterChip(
+                  label: Text(option, style: const TextStyle(fontSize: 12)),
+                  selected: selected,
+                  onSelected: (_) => controller.toggleRideFilter(key, option),
+                  selectedColor: TPColors.primary700,
+                  checkmarkColor: TPColors.white,
+                  labelStyle: TextStyle(
+                    color: selected ? TPColors.white : TPColors.grayscale700,
+                    fontWeight: FontWeight.w600,
+                  ),
+                  side: BorderSide(
+                    color:
+                        selected ? TPColors.primary700 : TPColors.grayscale100,
+                  ),
+                  backgroundColor: TPColors.white,
+                );
+              }).toList(),
+            ),
+          ],
         ),
-        const SizedBox(height: 6),
-        Wrap(
-          spacing: 8,
-          runSpacing: 8,
-          children: options.map((option) {
-            final selected = selectedValues.contains(option);
-            return FilterChip(
-              label: Text(option, style: const TextStyle(fontSize: 12)),
-              selected: selected,
-              onSelected: (_) => controller.toggleRideFilter(key, option),
-              selectedColor: TPColors.primary700,
-              checkmarkColor: TPColors.white,
-              labelStyle: TextStyle(
-                color: selected ? TPColors.white : TPColors.grayscale700,
-                fontWeight: FontWeight.w600,
-              ),
-              side: BorderSide(
-                color: selected ? TPColors.primary700 : TPColors.grayscale100,
-              ),
-              backgroundColor: TPColors.white,
-            );
-          }).toList(),
-        ),
-      ],
+      ),
     );
   }
 }
