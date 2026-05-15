@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:town_pass/util/tp_app_bar.dart';
+import 'package:town_pass/gen/assets.gen.dart';
 import 'package:town_pass/util/tp_colors.dart';
 import 'package:town_pass/util/tp_route.dart';
 
@@ -39,14 +39,29 @@ class ChildrenParkShell extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: TPColors.white,
-      appBar: TPAppBar(title: title),
-      body: SafeArea(child: body),
+      body: SafeArea(
+        child: Column(
+          children: [
+            _topAppBar(),
+            Expanded(child: body),
+          ],
+        ),
+      ),
       bottomNavigationBar: showBottomNavigation
           ? BottomNavigationBar(
               type: BottomNavigationBarType.fixed,
               currentIndex: _tabIndexByRoute(currentRoute),
+              backgroundColor: TPColors.white,
               selectedItemColor: TPColors.primary700,
               unselectedItemColor: TPColors.grayscale700,
+              selectedLabelStyle: const TextStyle(
+                fontSize: 10,
+                fontWeight: FontWeight.w600,
+              ),
+              unselectedLabelStyle: const TextStyle(
+                fontSize: 10,
+                fontWeight: FontWeight.w400,
+              ),
               onTap: (index) {
                 final routeName = switch (index) {
                   0 => TPRoute.childrenParkHome,
@@ -62,7 +77,7 @@ class ChildrenParkShell extends StatelessWidget {
                     icon: Icon(Icons.home_outlined), label: '首頁'),
                 BottomNavigationBarItem(
                   icon: Icon(Icons.attractions_outlined),
-                  label: '設施',
+                  label: '設施列表',
                 ),
                 BottomNavigationBarItem(
                     icon: Icon(Icons.map_outlined), label: '地圖'),
@@ -71,6 +86,65 @@ class ChildrenParkShell extends StatelessWidget {
               ],
             )
           : null,
+    );
+  }
+
+  Widget _topAppBar() {
+    return Container(
+      height: 64,
+      decoration: const BoxDecoration(
+        color: TPColors.white,
+        boxShadow: [
+          BoxShadow(
+            color: Color(0x12000000),
+            blurRadius: 8,
+            offset: Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          Container(
+            margin: const EdgeInsets.only(top: 4),
+            width: 100,
+            height: 16,
+            decoration: BoxDecoration(
+              color: Colors.black.withValues(alpha: 0.92),
+              borderRadius: BorderRadius.circular(999),
+            ),
+          ),
+          Expanded(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 12),
+              child: Row(
+                children: [
+                  Assets.svg.logoS.svg(width: 20, height: 20),
+                  const SizedBox(width: 8),
+                  const Expanded(
+                    child: Text(
+                      '台北迪士尼',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w500,
+                        color: TPColors.primary700,
+                      ),
+                    ),
+                  ),
+                  IconButton(
+                    onPressed: () {},
+                    icon: const Icon(
+                      Icons.notifications_none,
+                      color: TPColors.grayscale700,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
