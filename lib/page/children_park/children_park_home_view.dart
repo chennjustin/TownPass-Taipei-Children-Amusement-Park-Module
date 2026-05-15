@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:town_pass/page/children_park/mock/children_park_mock_data.dart';
-import 'package:town_pass/page/children_park/model/children_park_models.dart';
+import 'package:town_pass/page/children_park/data/children_park_faq_data.dart';
 import 'package:town_pass/page/children_park/widgets/children_park_shell.dart';
 import 'package:town_pass/util/tp_colors.dart';
 import 'package:town_pass/util/tp_route.dart';
@@ -14,148 +13,74 @@ class ChildrenParkHomeView extends StatefulWidget {
 }
 
 class _ChildrenParkHomeViewState extends State<ChildrenParkHomeView> {
-  final PageController _bannerController = PageController();
   int _activeBanner = 0;
+  final Set<String> _expandedFaqIds = {'faq-02'};
 
-  static const List<_FaqPreview> _quickFaqs = [
-    _FaqPreview(
-      category: '票務與支付',
-      question: '可以使用悠遊卡入園嗎？',
-      answers: ['可以。悠遊卡可用於驗票入園、搭乘設施與部分商店消費。'],
+  static const List<_BannerItem> _bannerItems = [
+    _BannerItem(
+      imageUrl:
+          'https://images.unsplash.com/photo-1513151233558-d860c5398176',
+      title: '夏季嘉年華：星光遊行',
+      subtitle: '每日 19:00 準時開始',
     ),
-    _FaqPreview(
-      category: '交通與入園',
-      question: '如何抵達兒童新樂園？',
-      answers: ['可搭捷運到劍潭站、士林站或芝山站，再轉乘公車。'],
+    _BannerItem(
+      imageUrl:
+          'https://images.unsplash.com/photo-1514302240736-b1fee5985889',
+      title: '週末煙火秀',
+      subtitle: '每週六、日 20:00 登場',
     ),
-    _FaqPreview(
-      category: '設施與安全',
-      question: '園區全面禁菸嗎？',
-      answers: ['是，園區內全面禁菸。'],
+    _BannerItem(
+      imageUrl:
+          'https://images.unsplash.com/photo-1555396273-367ea4eb4db5',
+      title: '美食街 85 折優惠',
+      subtitle: '會員出示 App 即享折扣',
     ),
   ];
 
-  @override
-  void dispose() {
-    _bannerController.dispose();
-    super.dispose();
-  }
+  static const List<_HomeActivityCard> _activityCards = [
+    _HomeActivityCard(
+      imageUrl: 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5',
+      title: '美食街 85 折優惠',
+      description: '出示 App 會員即享優惠',
+      date: '即日起',
+    ),
+    _HomeActivityCard(
+      imageUrl:
+          'https://images.unsplash.com/photo-1514302240736-b1fee5985889',
+      title: '週末煙火秀',
+      description: '每週六、日晚上 8 點',
+      date: '週末限定',
+    ),
+  ];
+
+  static const List<({String name, String time})> _shortestWaits = [
+    (name: '雲霄飛車', time: '10 min'),
+    (name: '旋轉木馬', time: '5 min'),
+    (name: '激流泛舟', time: '15 min'),
+  ];
 
   @override
   Widget build(BuildContext context) {
-    const events = ChildrenParkMockData.events;
-    final bannerItems = [
-      _BannerItem(
-        imageUrl: events[0].imageUrl,
-        title: '夏季嘉年華：星光遊行',
-        subtitle: '每日 19:00 準時開始',
-      ),
-      _BannerItem(
-        imageUrl: events[3].imageUrl,
-        title: '週末煙火秀',
-        subtitle: '每週六、日 20:00 登場',
-      ),
-      _BannerItem(
-        imageUrl: ChildrenParkMockData.attractions[6].imageUrl,
-        title: '美食街 85 折優惠',
-        subtitle: '會員出示 App 即享折扣',
-      ),
-    ];
-
     return ChildrenParkShell(
       title: '兒童新樂園',
       currentRoute: TPRoute.childrenParkHome,
       body: ListView(
         physics: const BouncingScrollPhysics(),
-        padding: const EdgeInsets.fromLTRB(16, 10, 16, 20),
+        padding: const EdgeInsets.fromLTRB(16, 10, 16, 24),
         children: [
-          SizedBox(
-            height: 176,
-            child: Stack(
-              children: [
-                PageView.builder(
-                  controller: _bannerController,
-                  onPageChanged: (index) =>
-                      setState(() => _activeBanner = index),
-                  itemCount: bannerItems.length,
-                  itemBuilder: (_, index) => _bannerCard(bannerItems[index]),
-                ),
-                Positioned(
-                  left: 6,
-                  top: 0,
-                  bottom: 0,
-                  child: Center(
-                    child: _roundButton(
-                      icon: Icons.chevron_left,
-                      onTap: () {
-                        final target =
-                            (_activeBanner - 1 + bannerItems.length) %
-                                bannerItems.length;
-                        _bannerController.animateToPage(
-                          target,
-                          duration: const Duration(milliseconds: 250),
-                          curve: Curves.easeOut,
-                        );
-                      },
-                    ),
-                  ),
-                ),
-                Positioned(
-                  right: 6,
-                  top: 0,
-                  bottom: 0,
-                  child: Center(
-                    child: _roundButton(
-                      icon: Icons.chevron_right,
-                      onTap: () {
-                        final target = (_activeBanner + 1) % bannerItems.length;
-                        _bannerController.animateToPage(
-                          target,
-                          duration: const Duration(milliseconds: 250),
-                          curve: Curves.easeOut,
-                        );
-                      },
-                    ),
-                  ),
-                ),
-                Positioned(
-                  bottom: 8,
-                  left: 0,
-                  right: 0,
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: List.generate(
-                      bannerItems.length,
-                      (index) => AnimatedContainer(
-                        duration: const Duration(milliseconds: 220),
-                        margin: const EdgeInsets.symmetric(horizontal: 3),
-                        width: _activeBanner == index ? 16 : 6,
-                        height: 6,
-                        decoration: BoxDecoration(
-                          color: _activeBanner == index
-                              ? TPColors.white
-                              : TPColors.white.withValues(alpha: 0.55),
-                          borderRadius: BorderRadius.circular(999),
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 14),
+          _bannerSection(),
+          const SizedBox(height: 20),
           _sectionHeader(
             title: '交通方式',
             icon: Icons.directions_bus_outlined,
-            trailing: TextButton.icon(
-              onPressed: () => Get.toNamed(TPRoute.childrenParkTransport),
-              icon: const Text('查看更多'),
-              label: const Icon(Icons.arrow_forward, size: 16),
+            trailing: _tealLink(
+              label: '查看更多',
+              onTap: () => Get.toNamed(TPRoute.childrenParkTransport),
             ),
           ),
-          _transportCard(),
-          const SizedBox(height: 10),
+          const SizedBox(height: 12),
+          _transportSection(),
+          const SizedBox(height: 20),
           _sectionHeader(
             title: '即時資訊',
             icon: Icons.info_outline,
@@ -164,99 +89,215 @@ class _ChildrenParkHomeViewState extends State<ChildrenParkHomeView> {
               style: TextStyle(
                 color: TPColors.primary700,
                 fontWeight: FontWeight.w600,
+                fontSize: 14,
               ),
             ),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 12),
           _crowdCard(),
-          const SizedBox(height: 8),
+          const SizedBox(height: 12),
           _shortestWaitCard(),
-          const SizedBox(height: 14),
+          const SizedBox(height: 20),
           _sectionHeader(
             title: '常見問題',
             icon: Icons.help_outline,
-            trailing: TextButton.icon(
-              onPressed: () => Get.toNamed(TPRoute.childrenParkFaq),
-              icon: const Text('查看完整 FAQ'),
-              label: const Icon(Icons.arrow_forward, size: 16),
+            trailing: _tealLink(
+              label: '查看完整 FAQ',
+              onTap: () => Get.toNamed(TPRoute.childrenParkFaq),
             ),
           ),
           const SizedBox(height: 8),
-          ..._quickFaqs.map((faq) => _faqPreviewTile(faq)),
-          const SizedBox(height: 14),
+          ...ChildrenParkFaqData.homePreviewItems.map(_faqPreviewTile),
+          const SizedBox(height: 20),
           _sectionHeader(
             title: '活動訊息',
             icon: Icons.calendar_today_outlined,
           ),
-          const SizedBox(height: 10),
+          const SizedBox(height: 12),
           SizedBox(
-            height: 260,
+            height: 268,
             child: ListView.separated(
               scrollDirection: Axis.horizontal,
-              itemBuilder: (_, index) => _activityCard(events[index]),
-              separatorBuilder: (_, __) => const SizedBox(width: 12),
-              itemCount: events.length.clamp(0, 3),
+              itemCount: _activityCards.length,
+              separatorBuilder: (_, __) => const SizedBox(width: 16),
+              itemBuilder: (_, index) => _activityCard(_activityCards[index]),
             ),
-          ),
-          const SizedBox(height: 10),
-          OutlinedButton.icon(
-            onPressed: () => Get.toNamed(TPRoute.childrenParkEvents),
-            icon: const Icon(Icons.event_note_outlined),
-            label: const Text('查看全部活動'),
           ),
         ],
       ),
     );
   }
 
-  Widget _bannerCard(_BannerItem item) {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 2),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(12),
-        color: TPColors.grayscale700,
-      ),
-      clipBehavior: Clip.antiAlias,
+  Widget _bannerSection() {
+    final item = _bannerItems[_activeBanner];
+    return SizedBox(
+      height: 176,
       child: Stack(
-        fit: StackFit.expand,
         children: [
-          Image.network(
-            item.imageUrl,
-            fit: BoxFit.cover,
-            errorBuilder: (_, __, ___) =>
-                Container(color: TPColors.grayscale700),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(12),
+            child: Stack(
+              fit: StackFit.expand,
+              children: [
+                Image.network(
+                  item.imageUrl,
+                  fit: BoxFit.cover,
+                  errorBuilder: (_, __, ___) =>
+                      Container(color: TPColors.grayscale700),
+                ),
+                Container(
+                  decoration: const BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [Color(0x26000000), Color(0xB3000000)],
+                    ),
+                  ),
+                ),
+                Positioned(
+                  left: 16,
+                  right: 16,
+                  bottom: 16,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        item.title,
+                        style: const TextStyle(
+                          color: TPColors.white,
+                          fontWeight: FontWeight.w600,
+                          fontSize: 18,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        item.subtitle,
+                        style: const TextStyle(
+                          color: Color(0xE6FFFFFF),
+                          fontSize: 12,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
           ),
-          Container(
-            decoration: const BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: [Color(0x20000000), Color(0xB0000000)],
+          Positioned(
+            left: 8,
+            top: 0,
+            bottom: 0,
+            child: Center(
+              child: _roundButton(
+                icon: Icons.chevron_left,
+                onTap: () => setState(() {
+                  _activeBanner = (_activeBanner - 1 + _bannerItems.length) %
+                      _bannerItems.length;
+                }),
               ),
             ),
           ),
           Positioned(
-            left: 12,
-            right: 12,
-            bottom: 16,
+            right: 8,
+            top: 0,
+            bottom: 0,
+            child: Center(
+              child: _roundButton(
+                icon: Icons.chevron_right,
+                onTap: () => setState(() {
+                  _activeBanner = (_activeBanner + 1) % _bannerItems.length;
+                }),
+              ),
+            ),
+          ),
+          Positioned(
+            bottom: 12,
+            left: 0,
+            right: 0,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: List.generate(
+                _bannerItems.length,
+                (index) => GestureDetector(
+                  onTap: () => setState(() => _activeBanner = index),
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 220),
+                    margin: const EdgeInsets.symmetric(horizontal: 3),
+                    width: _activeBanner == index ? 20 : 6,
+                    height: 6,
+                    decoration: BoxDecoration(
+                      color: _activeBanner == index
+                          ? TPColors.white
+                          : TPColors.white.withValues(alpha: 0.55),
+                      borderRadius: BorderRadius.circular(999),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _transportSection() {
+    return Container(
+      decoration: const BoxDecoration(
+        border: Border(
+          top: BorderSide(color: TPColors.grayscale100),
+          bottom: BorderSide(color: TPColors.grayscale100),
+        ),
+      ),
+      padding: const EdgeInsets.symmetric(vertical: 12),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Padding(
+            padding: EdgeInsets.only(top: 2),
+            child: Icon(Icons.place_outlined,
+                size: 16, color: TPColors.primary700),
+          ),
+          const SizedBox(width: 8),
+          Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  item.title,
-                  style: const TextStyle(
-                    color: TPColors.white,
-                    fontWeight: FontWeight.w700,
-                    fontSize: 18,
+                const Text(
+                  '兒童新樂園',
+                  style: TextStyle(
+                    fontWeight: FontWeight.w600,
+                    fontSize: 14,
+                    color: TPColors.grayscale900,
                   ),
                 ),
                 const SizedBox(height: 2),
-                Text(
-                  item.subtitle,
-                  style: const TextStyle(
-                    color: Color(0xE6FFFFFF),
-                    fontSize: 12,
+                const Text(
+                  '台北市士林區承德路五段 55 號（近劍潭／士林站）',
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: TPColors.grayscale700,
+                    height: 1.4,
                   ),
+                ),
+                const SizedBox(height: 8),
+                OutlinedButton.icon(
+                  onPressed: () =>
+                      Get.toNamed(TPRoute.childrenParkTransport),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: TPColors.primary700,
+                    side: const BorderSide(color: TPColors.primary700),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 8,
+                    ),
+                    textStyle: const TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  icon: const Icon(Icons.navigation_outlined, size: 14),
+                  label: const Text('從目前位置導航'),
                 ),
               ],
             ),
@@ -266,18 +307,366 @@ class _ChildrenParkHomeViewState extends State<ChildrenParkHomeView> {
     );
   }
 
-  Widget _roundButton({required IconData icon, required VoidCallback onTap}) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(999),
-      child: Ink(
-        width: 28,
-        height: 28,
-        decoration: BoxDecoration(
-          color: Colors.black.withValues(alpha: 0.35),
-          shape: BoxShape.circle,
+  Widget _crowdCard() {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: TPColors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: TPColors.grayscale100),
+      ),
+      child: Row(
+        children: [
+          const Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  '今日入園狀態',
+                  style: TextStyle(fontSize: 12, color: TPColors.grayscale500),
+                ),
+                SizedBox(height: 4),
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Text(
+                      '舒適',
+                      style: TextStyle(
+                        fontSize: 30,
+                        fontWeight: FontWeight.w600,
+                        color: TPColors.primary700,
+                        height: 1,
+                      ),
+                    ),
+                    SizedBox(width: 8),
+                    Padding(
+                      padding: EdgeInsets.only(bottom: 3),
+                      child: Text(
+                        '預估 3,500 人',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: TPColors.grayscale500,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          Container(
+            width: 48,
+            height: 48,
+            decoration: BoxDecoration(
+              color: const Color(0xFFE6F3FF),
+              borderRadius: BorderRadius.circular(999),
+            ),
+            child: const Icon(Icons.people_alt_outlined,
+                color: TPColors.primary700),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _shortestWaitCard() {
+    return Container(
+      decoration: BoxDecoration(
+        color: TPColors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: TPColors.grayscale100),
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: Column(
+        children: [
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+            decoration: const BoxDecoration(
+              color: Color(0xFFE6F3FF),
+              border: Border(
+                bottom: BorderSide(color: TPColors.grayscale100),
+              ),
+            ),
+            child: const Text(
+              '最短排隊設施',
+              style: TextStyle(
+                color: TPColors.primary700,
+                fontWeight: FontWeight.w600,
+                fontSize: 14,
+              ),
+            ),
+          ),
+          ..._shortestWaits.map(
+            (item) => Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+              decoration: const BoxDecoration(
+                border: Border(
+                  top: BorderSide(color: TPColors.grayscale100),
+                ),
+              ),
+              child: Row(
+                children: [
+                  Container(
+                    width: 8,
+                    height: 8,
+                    decoration: const BoxDecoration(
+                      color: TPColors.primary700,
+                      shape: BoxShape.circle,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      item.name,
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w600,
+                        fontSize: 14,
+                        color: TPColors.grayscale900,
+                      ),
+                    ),
+                  ),
+                  Text(
+                    item.time,
+                    style: const TextStyle(
+                      color: TPColors.primary700,
+                      fontWeight: FontWeight.w600,
+                      fontSize: 14,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _faqPreviewTile(ChildrenParkFaqItem faq) {
+    final expanded = _expandedFaqIds.contains(faq.id);
+    return Container(
+      decoration: const BoxDecoration(
+        border: Border(
+          top: BorderSide(color: TPColors.grayscale200),
         ),
-        child: Icon(icon, color: TPColors.white, size: 18),
+      ),
+      child: Column(
+        children: [
+          InkWell(
+            onTap: () {
+              setState(() {
+                if (expanded) {
+                  _expandedFaqIds.remove(faq.id);
+                } else {
+                  _expandedFaqIds.add(faq.id);
+                }
+              });
+            },
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 12),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.only(left: 8),
+                          decoration: const BoxDecoration(
+                            border: Border(
+                              left: BorderSide(
+                                color: TPColors.primary700,
+                                width: 2,
+                              ),
+                            ),
+                          ),
+                          child: Text(
+                            faq.category,
+                            style: const TextStyle(
+                              fontSize: 10,
+                              color: TPColors.primary700,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          faq.question,
+                          style: const TextStyle(
+                            fontWeight: FontWeight.w600,
+                            fontSize: 14,
+                            color: TPColors.grayscale900,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  AnimatedRotation(
+                    turns: expanded ? 0.5 : 0,
+                    duration: const Duration(milliseconds: 200),
+                    child: const Icon(
+                      Icons.keyboard_arrow_down,
+                      size: 18,
+                      color: TPColors.grayscale500,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          if (expanded)
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.only(bottom: 12),
+              decoration: const BoxDecoration(
+                border: Border(
+                  top: BorderSide(color: TPColors.grayscale100),
+                ),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: faq.answers
+                    .take(2)
+                    .map(
+                      (line) => Padding(
+                        padding: const EdgeInsets.only(top: 8),
+                        child: Text(
+                          line,
+                          style: const TextStyle(
+                            fontSize: 14,
+                            color: TPColors.grayscale600,
+                            height: 1.5,
+                          ),
+                        ),
+                      ),
+                    )
+                    .toList(),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _activityCard(_HomeActivityCard activity) {
+    return Container(
+      width: MediaQuery.of(context).size.width * 0.86,
+      decoration: BoxDecoration(
+        color: TPColors.white,
+        border: Border.all(color: TPColors.grayscale100),
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            height: 176,
+            width: double.infinity,
+            child: Stack(
+              fit: StackFit.expand,
+              children: [
+                Image.network(
+                  activity.imageUrl,
+                  fit: BoxFit.cover,
+                  errorBuilder: (_, __, ___) =>
+                      Container(color: TPColors.grayscale700),
+                ),
+                Container(
+                  decoration: const BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [Color(0x33000000), Color(0xA6000000)],
+                    ),
+                  ),
+                ),
+                Positioned(
+                  left: 12,
+                  top: 12,
+                  child: Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    color: TPColors.white.withValues(alpha: 0.9),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(Icons.calendar_today_outlined,
+                            size: 12, color: TPColors.primary700),
+                        const SizedBox(width: 4),
+                        Text(
+                          activity.date,
+                          style: const TextStyle(
+                            fontSize: 10,
+                            fontWeight: FontWeight.w600,
+                            color: TPColors.grayscale700,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                Positioned(
+                  left: 12,
+                  right: 12,
+                  bottom: 12,
+                  child: Text(
+                    activity.title,
+                    style: const TextStyle(
+                      fontSize: 24,
+                      fontWeight: FontWeight.w600,
+                      color: TPColors.white,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.all(12),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    activity.description,
+                    style: const TextStyle(
+                      fontSize: 14,
+                      color: TPColors.grayscale600,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                OutlinedButton(
+                  onPressed: () => Get.toNamed(TPRoute.childrenParkEvents),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: TPColors.primary700,
+                    side: const BorderSide(color: TPColors.primary700),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 6,
+                    ),
+                    minimumSize: Size.zero,
+                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    textStyle: const TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  child: const Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text('立即查看'),
+                      SizedBox(width: 2),
+                      Icon(Icons.arrow_forward, size: 14),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -292,8 +681,8 @@ class _ChildrenParkHomeViewState extends State<ChildrenParkHomeView> {
         Text(
           title,
           style: const TextStyle(
-            fontSize: 20,
-            fontWeight: FontWeight.w700,
+            fontSize: 18,
+            fontWeight: FontWeight.w600,
             color: TPColors.grayscale900,
           ),
         ),
@@ -305,330 +694,39 @@ class _ChildrenParkHomeViewState extends State<ChildrenParkHomeView> {
     );
   }
 
-  Widget _transportCard() {
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: TPColors.grayscale100),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Icon(Icons.place_outlined, size: 16, color: TPColors.primary700),
-              SizedBox(width: 6),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      '兒童新樂園',
-                      style: TextStyle(fontWeight: FontWeight.w700),
-                    ),
-                    SizedBox(height: 2),
-                    Text(
-                      '台北市士林區承德路五段 55 號（近劍潭／士林站）',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: TPColors.grayscale700,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 10),
-          OutlinedButton.icon(
-            onPressed: () => Get.toNamed(TPRoute.childrenParkTransport),
-            icon: const Icon(Icons.navigation_outlined),
-            label: const Text('從目前位置導航'),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _crowdCard() {
-    return Container(
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: TPColors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: TPColors.grayscale100),
-      ),
+  Widget _tealLink({required String label, required VoidCallback onTap}) {
+    return GestureDetector(
+      onTap: onTap,
       child: Row(
+        mainAxisSize: MainAxisSize.min,
         children: [
-          const Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  '今日入園狀態',
-                  style: TextStyle(fontSize: 12, color: TPColors.grayscale700),
-                ),
-                SizedBox(height: 4),
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    Text(
-                      '舒適',
-                      style: TextStyle(
-                        fontSize: 32,
-                        fontWeight: FontWeight.w700,
-                        color: TPColors.primary700,
-                        height: 1,
-                      ),
-                    ),
-                    SizedBox(width: 8),
-                    Padding(
-                      padding: EdgeInsets.only(bottom: 3),
-                      child: Text(
-                        '預估 3,500 人',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: TPColors.grayscale700,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ],
+          Text(
+            label,
+            style: const TextStyle(
+              color: TPColors.primary700,
+              fontWeight: FontWeight.w600,
+              fontSize: 14,
             ),
           ),
-          Container(
-            width: 52,
-            height: 52,
-            decoration: BoxDecoration(
-              color: const Color(0xFFE6F3FF),
-              borderRadius: BorderRadius.circular(999),
-            ),
-            child: const Icon(Icons.people_alt_outlined,
-                color: TPColors.primary700),
-          ),
+          const SizedBox(width: 2),
+          const Icon(Icons.arrow_forward, size: 16, color: TPColors.primary700),
         ],
       ),
     );
   }
 
-  Widget _shortestWaitCard() {
-    final list = ChildrenParkMockData.attractions
-        .where((a) => a.waitMinutes != null)
-        .toList()
-      ..sort((a, b) => a.waitMinutes!.compareTo(b.waitMinutes!));
-    return Container(
-      decoration: BoxDecoration(
-        color: TPColors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: TPColors.grayscale100),
-      ),
-      child: Column(
-        children: [
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-            decoration: const BoxDecoration(
-              color: Color(0xFFE6F3FF),
-              borderRadius: BorderRadius.vertical(top: Radius.circular(11)),
-            ),
-            child: const Row(
-              children: [
-                Text(
-                  '最短排隊設施',
-                  style: TextStyle(
-                    color: TPColors.primary700,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          ...list.take(3).map(
-                (item) => Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                  decoration: const BoxDecoration(
-                    border: Border(
-                      top: BorderSide(color: TPColors.grayscale100),
-                    ),
-                  ),
-                  child: Row(
-                    children: [
-                      Container(
-                        width: 8,
-                        height: 8,
-                        decoration: const BoxDecoration(
-                          color: TPColors.primary700,
-                          shape: BoxShape.circle,
-                        ),
-                      ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: Text(
-                          item.name,
-                          style: const TextStyle(fontWeight: FontWeight.w700),
-                        ),
-                      ),
-                      Text(
-                        '${item.waitMinutes} 分鐘',
-                        style: const TextStyle(
-                          color: TPColors.primary700,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-        ],
-      ),
-    );
-  }
-
-  Widget _faqPreviewTile(_FaqPreview faq) {
-    return Container(
-      decoration: const BoxDecoration(
-        border: Border(
-          top: BorderSide(color: TPColors.grayscale100),
+  Widget _roundButton({required IconData icon, required VoidCallback onTap}) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(999),
+      child: Ink(
+        width: 28,
+        height: 28,
+        decoration: BoxDecoration(
+          color: Colors.black.withValues(alpha: 0.3),
+          shape: BoxShape.circle,
         ),
-      ),
-      child: ExpansionTile(
-        tilePadding: const EdgeInsets.symmetric(horizontal: 0, vertical: 2),
-        childrenPadding: const EdgeInsets.only(bottom: 10),
-        title: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-              decoration: const BoxDecoration(
-                border: Border(
-                  left: BorderSide(color: TPColors.primary700, width: 2),
-                ),
-              ),
-              child: Text(
-                faq.category,
-                style: const TextStyle(
-                  fontSize: 11,
-                  color: TPColors.primary700,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              faq.question,
-              style: const TextStyle(
-                fontWeight: FontWeight.w700,
-                fontSize: 14,
-                color: TPColors.grayscale900,
-              ),
-            ),
-          ],
-        ),
-        children: faq.answers
-            .map(
-              (line) => Padding(
-                padding: const EdgeInsets.only(bottom: 4),
-                child: Align(
-                  alignment: Alignment.centerLeft,
-                  child: Text(
-                    line,
-                    style: const TextStyle(
-                      fontSize: 13,
-                      color: TPColors.grayscale700,
-                      height: 1.4,
-                    ),
-                  ),
-                ),
-              ),
-            )
-            .toList(),
-      ),
-    );
-  }
-
-  Widget _activityCard(ParkEvent event) {
-    return Container(
-      width: 290,
-      decoration: BoxDecoration(
-        color: TPColors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: TPColors.grayscale100),
-      ),
-      clipBehavior: Clip.antiAlias,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Stack(
-            children: [
-              SizedBox(
-                width: double.infinity,
-                height: 160,
-                child: Image.network(event.imageUrl, fit: BoxFit.cover),
-              ),
-              Positioned(
-                left: 10,
-                top: 10,
-                child: Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: TPColors.white.withValues(alpha: 0.92),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Text(
-                    event.timeText,
-                    style: const TextStyle(
-                      fontSize: 10,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  event.name,
-                  style: const TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w700,
-                    color: TPColors.grayscale900,
-                  ),
-                ),
-                const SizedBox(height: 6),
-                Row(
-                  children: [
-                    Expanded(
-                      child: Text(
-                        event.location,
-                        style: const TextStyle(
-                          fontSize: 13,
-                          color: TPColors.grayscale700,
-                        ),
-                      ),
-                    ),
-                    OutlinedButton(
-                      onPressed: () => Get.toNamed(TPRoute.childrenParkEvents),
-                      style: OutlinedButton.styleFrom(
-                        minimumSize: const Size(84, 34),
-                        padding: const EdgeInsets.symmetric(horizontal: 10),
-                      ),
-                      child: const Text('立即查看'),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-        ],
+        child: Icon(icon, color: TPColors.white, size: 18),
       ),
     );
   }
@@ -646,14 +744,16 @@ class _BannerItem {
   });
 }
 
-class _FaqPreview {
-  final String category;
-  final String question;
-  final List<String> answers;
+class _HomeActivityCard {
+  final String imageUrl;
+  final String title;
+  final String description;
+  final String date;
 
-  const _FaqPreview({
-    required this.category,
-    required this.question,
-    required this.answers,
+  const _HomeActivityCard({
+    required this.imageUrl,
+    required this.title,
+    required this.description,
+    required this.date,
   });
 }
