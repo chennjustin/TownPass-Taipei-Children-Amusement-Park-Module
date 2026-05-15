@@ -267,9 +267,15 @@ class ChildrenParkMapController extends GetxController {
     _rebuildMarkers();
   }
 
-  void focusPoint(ChildrenParkMapPoint point, {bool animate = true}) {
+  void focusPoint(
+    ChildrenParkMapPoint point, {
+    bool animate = true,
+    bool clearDetailSelection = true,
+  }) {
     activeCarouselPointId.value = point.id;
-    selectedPoint.value = null;
+    if (clearDetailSelection) {
+      selectedPoint.value = null;
+    }
     _rebuildMarkers();
     mapController?.animateCamera(
       CameraUpdate.newCameraPosition(
@@ -284,8 +290,7 @@ class ChildrenParkMapController extends GetxController {
   void showPointDetail(ChildrenParkMapPoint point) {
     selectedPoint.value = point;
     activeCarouselPointId.value = point.id;
-    _rebuildMarkers();
-    focusPoint(point);
+    focusPoint(point, clearDetailSelection: false);
   }
 
   void closePointDetail() {

@@ -570,57 +570,76 @@ class _BottomCarousel extends StatelessWidget {
                   const Icon(Icons.chevron_left, color: TPColors.grayscale400),
             ),
             Expanded(
-              child: GestureDetector(
-                onTap: () => controller.showPointDetail(point),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
+              child: Material(
+                color: Colors.transparent,
+                child: InkWell(
+                  onTap: () => controller.showPointDetail(point),
+                  borderRadius: BorderRadius.circular(10),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 4,
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Container(
-                          width: 10,
-                          height: 10,
-                          decoration: BoxDecoration(
-                            color: point.pointType ==
-                                    ChildrenParkMapPointType.facility
-                                ? TPColors.primary700
-                                : const Color(0xFFE53935),
-                            shape: BoxShape.circle,
+                        Row(
+                          children: [
+                            Container(
+                              width: 10,
+                              height: 10,
+                              decoration: BoxDecoration(
+                                color: point.pointType ==
+                                        ChildrenParkMapPointType.facility
+                                    ? TPColors.primary700
+                                    : const Color(0xFFE53935),
+                                shape: BoxShape.circle,
+                              ),
+                            ),
+                            const SizedBox(width: 6),
+                            Text(
+                              getPointLabel(point.pointType),
+                              style: const TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w700,
+                                color: TPColors.grayscale500,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          point.name,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                            color: TPColors.grayscale900,
                           ),
                         ),
-                        const SizedBox(width: 6),
+                        const SizedBox(height: 2),
                         Text(
-                          getPointLabel(point.pointType),
+                          point.pointType == ChildrenParkMapPointType.facility
+                              ? '等待 ${getFacilityWaitMinutes(point)} 分鐘'
+                              : point.category,
                           style: const TextStyle(
+                            fontSize: 12,
+                            color: TPColors.grayscale500,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        const Text(
+                          '點擊查看詳細資訊',
+                          style: TextStyle(
                             fontSize: 11,
                             fontWeight: FontWeight.w700,
-                            color: TPColors.grayscale500,
+                            color: TPColors.primary700,
                           ),
                         ),
                       ],
                     ),
-                    const SizedBox(height: 4),
-                    Text(
-                      point.name,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                        color: TPColors.grayscale900,
-                      ),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      point.pointType == ChildrenParkMapPointType.facility
-                          ? '等待 ${getFacilityWaitMinutes(point)} 分鐘'
-                          : point.category,
-                      style: const TextStyle(
-                        fontSize: 12,
-                        color: TPColors.grayscale500,
-                      ),
-                    ),
-                  ],
+                  ),
                 ),
               ),
             ),
@@ -655,6 +674,10 @@ class _DetailCard extends StatelessWidget {
     final wait = point.pointType == ChildrenParkMapPointType.facility
         ? getFacilityWaitMinutes(point)
         : null;
+    final displayCategory = detail?.category.isNotEmpty == true
+        ? detail!.category
+        : point.category;
+    final floorText = '${point.floor ?? 1} 樓';
     final tags = [
       detail?.filters?.height,
       detail?.filters?.thrill,
@@ -663,155 +686,176 @@ class _DetailCard extends StatelessWidget {
       ...?detail?.filters?.special,
     ].whereType<String>().toList();
 
-    return Container(
-      padding: const EdgeInsets.fromLTRB(14, 6, 14, 14),
-      decoration: _cardDecoration,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Center(
-            child: Container(
-              width: 38,
-              height: 4,
-              margin: const EdgeInsets.only(bottom: 2),
-              decoration: BoxDecoration(
-                color: TPColors.grayscale200,
-                borderRadius: BorderRadius.circular(99),
+    return SizedBox(
+      height: MediaQuery.of(context).size.height * 0.72,
+      child: Container(
+        padding: const EdgeInsets.fromLTRB(14, 6, 14, 14),
+        decoration: _cardDecoration,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Center(
+              child: Container(
+                width: 38,
+                height: 4,
+                margin: const EdgeInsets.only(bottom: 2),
+                decoration: BoxDecoration(
+                  color: TPColors.grayscale200,
+                  borderRadius: BorderRadius.circular(99),
+                ),
               ),
             ),
-          ),
-          Row(
-            children: [
-              _miniPill(
-                getPointLabel(point.pointType),
-                bg: const Color(0xFFE6F3FF),
-                fg: TPColors.primary700,
-              ),
-              const SizedBox(width: 6),
-              _miniPill(
-                detail?.category.isNotEmpty == true
-                    ? detail!.category
-                    : point.category,
-                bg: const Color(0xFFF3F4F6),
-                fg: TPColors.grayscale700,
-              ),
-              const Expanded(child: SizedBox()),
-              IconButton(
-                onPressed: onClose,
-                icon: const Icon(Icons.close, size: 18),
-                padding: EdgeInsets.zero,
-                constraints: const BoxConstraints(minWidth: 30, minHeight: 30),
-                style: IconButton.styleFrom(
-                  backgroundColor: TPColors.grayscale100,
+            Row(
+              children: [
+                _miniPill(
+                  getPointLabel(point.pointType),
+                  bg: const Color(0xFFE6F3FF),
+                  fg: TPColors.primary700,
                 ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 4),
-          Text(
-            point.name,
-            style: const TextStyle(
-              fontSize: 30,
-              fontWeight: FontWeight.w600,
-              color: TPColors.grayscale900,
-              height: 1.1,
-            ),
-          ),
-          const SizedBox(height: 6),
-          Row(
-            children: [
-              const Icon(Icons.place_outlined,
-                  size: 15, color: TPColors.primary700),
-              const SizedBox(width: 4),
-              Text(
-                '${point.floor ?? 1} 樓',
-                style: const TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
-                  color: TPColors.grayscale700,
+                const SizedBox(width: 6),
+                _miniPill(
+                  displayCategory,
+                  bg: const Color(0xFFF3F4F6),
+                  fg: TPColors.grayscale700,
                 ),
-              ),
-              const SizedBox(width: 12),
-              const Icon(Icons.access_time,
-                  size: 15, color: TPColors.primary700),
-              const SizedBox(width: 4),
-              Text(
-                wait == null ? '現場資訊' : '等待 $wait 分鐘',
-                style: const TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w700,
-                  color: TPColors.primary700,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          Row(
-            children: [
-              Expanded(
-                child: _infoBox(
-                  icon: Icons.sell_outlined,
-                  title: '分類',
-                  value: detail?.category.isNotEmpty == true
-                      ? detail!.category
-                      : point.category,
-                ),
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: _infoBox(
-                  icon: Icons.place_outlined,
-                  title: '位置',
-                  value: '${point.floor ?? 1} 樓',
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 10),
-          _statusCard(wait),
-          const SizedBox(height: 10),
-          _descriptionCard(detail?.description),
-          if (tags.isNotEmpty) ...[
-            const SizedBox(height: 10),
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: TPColors.white,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: TPColors.grayscale100),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    '篩選標籤',
-                    style: TextStyle(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w700,
-                      color: TPColors.grayscale500,
+                const Spacer(),
+                Material(
+                  color: TPColors.grayscale100,
+                  shape: const CircleBorder(),
+                  child: InkWell(
+                    onTap: onClose,
+                    customBorder: const CircleBorder(),
+                    child: const SizedBox(
+                      width: 30,
+                      height: 30,
+                      child: Icon(
+                        Icons.close,
+                        size: 18,
+                        color: TPColors.grayscale500,
+                      ),
                     ),
                   ),
-                  const SizedBox(height: 8),
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
-                    children: tags
-                        .map(
-                          (tag) => _miniPill(
-                            tag,
-                            bg: const Color(0xFFF1F4F6),
-                            fg: TPColors.grayscale700,
+                ),
+              ],
+            ),
+            const SizedBox(height: 4),
+            Expanded(
+              child: SingleChildScrollView(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      point.name,
+                      style: const TextStyle(
+                        fontSize: 38,
+                        fontWeight: FontWeight.w600,
+                        color: TPColors.grayscale900,
+                        height: 1.04,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    Row(
+                      children: [
+                        const Icon(
+                          Icons.place_outlined,
+                          size: 15,
+                          color: TPColors.primary700,
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          floorText,
+                          style: const TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                            color: TPColors.grayscale700,
                           ),
-                        )
-                        .toList(),
-                  ),
-                ],
+                        ),
+                        const SizedBox(width: 12),
+                        const Icon(
+                          Icons.access_time,
+                          size: 15,
+                          color: TPColors.primary700,
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          wait == null ? '現場資訊' : '等待 $wait 分鐘',
+                          style: const TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w700,
+                            color: TPColors.primary700,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: _infoBox(
+                            icon: Icons.sell_outlined,
+                            title: '分類',
+                            value: displayCategory,
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: _infoBox(
+                            icon: Icons.place_outlined,
+                            title: '位置',
+                            value: floorText,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 10),
+                    _statusCard(wait),
+                    const SizedBox(height: 10),
+                    _descriptionCard(detail?.description),
+                    if (tags.isNotEmpty) ...[
+                      const SizedBox(height: 10),
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: TPColors.white,
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: TPColors.grayscale100),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text(
+                              '篩選標籤',
+                              style: TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w700,
+                                color: TPColors.grayscale500,
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            Wrap(
+                              spacing: 8,
+                              runSpacing: 8,
+                              children: tags
+                                  .map(
+                                    (tag) => _miniPill(
+                                      tag,
+                                      bg: const Color(0xFFF1F4F6),
+                                      fg: TPColors.grayscale700,
+                                    ),
+                                  )
+                                  .toList(),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
               ),
             ),
           ],
-        ],
+        ),
       ),
     );
   }
@@ -862,9 +906,10 @@ class _DetailCard extends StatelessWidget {
           Text(
             value,
             style: const TextStyle(
-              fontSize: 22,
+              fontSize: 30,
               fontWeight: FontWeight.w700,
               color: TPColors.grayscale900,
+              height: 1.05,
             ),
           ),
         ],
