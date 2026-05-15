@@ -13,6 +13,12 @@ import 'package:town_pass/page/city_service/widget/pinned_service_widget_control
 import 'package:town_pass/page/city_service_edit/city_service_edit_view.dart';
 import 'package:town_pass/page/city_service_edit/city_service_edit_view_controller.dart';
 import 'package:town_pass/page/children_park/children_park_controller.dart';
+import 'package:town_pass/page/children_park/children_park_events_view.dart';
+import 'package:town_pass/page/children_park/children_park_facilities_view.dart';
+import 'package:town_pass/page/children_park/children_park_faq_view.dart';
+import 'package:town_pass/page/children_park/children_park_home_view.dart';
+import 'package:town_pass/page/children_park/children_park_map_view.dart';
+import 'package:town_pass/page/children_park/children_park_transport_view.dart';
 import 'package:town_pass/page/children_park/children_park_view.dart';
 import 'package:town_pass/page/feedback/feedback_view.dart';
 import 'package:town_pass/page/feedback/feedback_view_controller.dart';
@@ -204,45 +210,27 @@ abstract class TPRoute {
     ),
     GetPage(
       name: childrenParkHome,
-      page: () => const ChildrenParkView(),
-      binding: BindingsBuilder(() {
-        Get.put<ChildrenParkController>(ChildrenParkController());
-      }),
+      page: () => const ChildrenParkHomeView(),
     ),
     GetPage(
       name: childrenParkFacilities,
-      page: () => const ChildrenParkView(),
-      binding: BindingsBuilder(() {
-        Get.put<ChildrenParkController>(ChildrenParkController());
-      }),
+      page: () => const ChildrenParkFacilitiesView(),
     ),
     GetPage(
       name: childrenParkMap,
-      page: () => const ChildrenParkView(),
-      binding: BindingsBuilder(() {
-        Get.put<ChildrenParkController>(ChildrenParkController());
-      }),
+      page: () => const ChildrenParkMapView(),
     ),
     GetPage(
       name: childrenParkEvents,
-      page: () => const ChildrenParkView(),
-      binding: BindingsBuilder(() {
-        Get.put<ChildrenParkController>(ChildrenParkController());
-      }),
+      page: () => const ChildrenParkEventsView(),
     ),
     GetPage(
       name: childrenParkTransport,
-      page: () => const ChildrenParkView(),
-      binding: BindingsBuilder(() {
-        Get.put<ChildrenParkController>(ChildrenParkController());
-      }),
+      page: () => const ChildrenParkTransportView(),
     ),
     GetPage(
       name: childrenParkFaq,
-      page: () => const ChildrenParkView(),
-      binding: BindingsBuilder(() {
-        Get.put<ChildrenParkController>(ChildrenParkController());
-      }),
+      page: () => const ChildrenParkFaqView(),
     ),
   ];
 
