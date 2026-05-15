@@ -4,8 +4,10 @@ abstract final class ChildrenParkMapConstants {
   static const LatLng parkCenter = LatLng(25.0974, 121.5151);
 
   static final LatLngBounds parkBounds = LatLngBounds(
-    southwest: const LatLng(25.09635, 121.51410),
-    northeast: const LatLng(25.09845, 121.51620),
+    //southwest: const LatLng(25.09635, 121.51410),
+    //northeast: const LatLng(25.09845, 121.51620),
+    southwest: const LatLng(12.09635, 111.51410),
+    northeast: const LatLng(33.09845, 131.51620),
   );
 
   static final LatLngBounds overlayBounds = LatLngBounds(

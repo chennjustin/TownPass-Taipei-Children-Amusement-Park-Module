@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:town_pass/page/children_park/mock/children_park_mock_data.dart';
-import 'package:town_pass/page/children_park/model/children_park_models.dart';
+import 'package:get/get.dart';
+import 'package:town_pass/page/children_park/map/children_park_map_constants.dart';
+import 'package:town_pass/page/children_park/map/children_park_map_data.dart';
+import 'package:town_pass/page/children_park/map/children_park_map_helpers.dart';
+import 'package:town_pass/page/children_park/map/children_park_map_models.dart';
 import 'package:town_pass/page/children_park/widgets/children_park_shell.dart';
 import 'package:town_pass/util/tp_colors.dart';
 import 'package:town_pass/util/tp_route.dart';
@@ -16,33 +19,67 @@ class ChildrenParkFacilitiesView extends StatefulWidget {
 class _ChildrenParkFacilitiesViewState
     extends State<ChildrenParkFacilitiesView> {
   final TextEditingController _searchController = TextEditingController();
+  bool _loading = true;
   bool _filterPanelOpen = false;
-
+  List<_FacilityListItem> _allItems = [];
   String _query = '';
-  String _sort = 'none';
+  String _sort = '';
   String _height = '';
   String _thrill = '';
   String _environment = '';
   String _price = '';
   String _special = '';
 
-  static const List<String> _heightOptions = [
-    '',
-    '無限制',
-    '110cm',
-    '120cm',
-    '140cm'
-  ];
-  static const List<String> _thrillOptions = ['', '親子友善', '中等刺激', '刺激挑戰'];
-  static const List<String> _environmentOptions = ['', '室內', '戶外'];
-  static const List<String> _priceOptions = ['', '免費', '20元', '30元'];
-  static const List<String> _specialOptions = ['', '幼童友善', '雨天可玩', '快速通行'];
+  @override
+  void initState() {
+    super.initState();
+    _loadFacilities();
+  }
+
+  Future<void> _loadFacilities() async {
+    try {
+      final points = await ChildrenParkMapData.loadAllPoints();
+      final details = await ChildrenParkMapData.loadPlaceDetails();
+      final detailMap = <String, ChildrenParkPlaceDetail>{};
+      for (final detail in details) {
+        detailMap[normalizePlaceName(detail.name)] = detail;
+        for (final alias in detail.aliases) {
+          detailMap[normalizePlaceName(alias)] = detail;
+        }
+      }
+
+      final facilityItems = points
+          .where((point) =>
+              getPointContentType(point) == ChildrenParkMapContentType.facility)
+          .where(isRidePoint)
+          .map((point) {
+        final detail = detailMap[normalizePlaceName(point.name)];
+        final waitMinutes = getFacilityWaitMinutes(point);
+        return _FacilityListItem(
+          point: point,
+          detail: detail,
+          waitMinutes: waitMinutes,
+        );
+      }).toList();
+
+      if (!mounted) return;
+      setState(() {
+        _allItems = facilityItems;
+        _loading = false;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _loading = false;
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     final attractions = _filteredAttractions();
     final hasActiveFilters = _query.isNotEmpty ||
-        _sort != 'none' ||
+        _sort.isNotEmpty ||
         _height.isNotEmpty ||
         _thrill.isNotEmpty ||
         _environment.isNotEmpty ||
@@ -52,228 +89,341 @@ class _ChildrenParkFacilitiesViewState
     return ChildrenParkShell(
       title: '設施資訊',
       currentRoute: TPRoute.childrenParkFacilities,
-      body: Column(
-        children: [
-          Container(
-            padding: const EdgeInsets.fromLTRB(16, 10, 16, 12),
-            decoration: const BoxDecoration(
-              color: TPColors.white,
-              border: Border(
-                bottom: BorderSide(color: TPColors.grayscale100),
+      body: _loading
+          ? const Center(
+              child: CircularProgressIndicator(color: TPColors.primary700),
+            )
+          : Column(
+              children: [
+                Container(
+                  padding: const EdgeInsets.fromLTRB(16, 10, 16, 12),
+                  decoration: const BoxDecoration(
+                    color: TPColors.white,
+                    border: Border(
+                      bottom: BorderSide(color: TPColors.grayscale100),
+                    ),
+                  ),
+                  child: Column(
+                    children: [
+                      Row(
+                        children: [
+                          Expanded(
+                            child: TextField(
+                              controller: _searchController,
+                              onChanged: (value) =>
+                                  setState(() => _query = value.trim()),
+                              decoration: InputDecoration(
+                                isDense: true,
+                                prefixIcon: const Icon(Icons.search, size: 20),
+                                hintText: '搜尋設施或表演...',
+                                contentPadding: const EdgeInsets.symmetric(
+                                  horizontal: 12,
+                                  vertical: 12,
+                                ),
+                                filled: true,
+                                fillColor: TPColors.white,
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                  borderSide: const BorderSide(
+                                      color: TPColors.grayscale100),
+                                ),
+                                enabledBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                  borderSide: const BorderSide(
+                                      color: TPColors.grayscale100),
+                                ),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Container(
+                            width: 44,
+                            height: 44,
+                            decoration: BoxDecoration(
+                              color: _filterPanelOpen || hasActiveFilters
+                                  ? TPColors.primary700
+                                  : TPColors.white,
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(
+                                color: _filterPanelOpen || hasActiveFilters
+                                    ? TPColors.primary700
+                                    : TPColors.grayscale100,
+                              ),
+                            ),
+                            child: IconButton(
+                              onPressed: () {
+                                setState(() {
+                                  _filterPanelOpen = !_filterPanelOpen;
+                                });
+                              },
+                              icon: Icon(
+                                Icons.tune,
+                                color: _filterPanelOpen || hasActiveFilters
+                                    ? TPColors.white
+                                    : TPColors.primary700,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      if (_filterPanelOpen) ...[
+                        const SizedBox(height: 10),
+                        SingleChildScrollView(
+                          scrollDirection: Axis.horizontal,
+                          child: Row(
+                            children: [
+                              _filterPicker(
+                                label: '等待時間',
+                                value: _sort,
+                                displayText: (value) => switch (value) {
+                                  '' => '等待時間',
+                                  'asc' => '最短',
+                                  'desc' => '最長',
+                                  _ => value,
+                                },
+                                onTap: () => _pickFilterOption(
+                                  label: '等待時間',
+                                  currentValue: _sort,
+                                  options: const ['', 'asc', 'desc'],
+                                  displayText: (value) => switch (value) {
+                                    '' => '等待時間',
+                                    'asc' => '等待時間（最短）',
+                                    'desc' => '等待時間（最長）',
+                                    _ => value,
+                                  },
+                                  onChanged: (value) =>
+                                      setState(() => _sort = value),
+                                ),
+                              ),
+                              _filterPicker(
+                                label: '身高限制',
+                                value: _height,
+                                onTap: () => _pickFilterOption(
+                                  label: '身高限制',
+                                  currentValue: _height,
+                                  options: const [
+                                    '',
+                                    ...ChildrenParkMapConstants.heightFilterOptions,
+                                  ],
+                                  onChanged: (value) =>
+                                      setState(() => _height = value),
+                                ),
+                              ),
+                              _filterPicker(
+                                label: '尖叫指數',
+                                value: _thrill,
+                                onTap: () => _pickFilterOption(
+                                  label: '尖叫指數',
+                                  currentValue: _thrill,
+                                  options: const [
+                                    '',
+                                    ...ChildrenParkMapConstants.thrillFilterOptions,
+                                  ],
+                                  onChanged: (value) =>
+                                      setState(() => _thrill = value),
+                                ),
+                              ),
+                              _filterPicker(
+                                label: '室內外',
+                                value: _environment,
+                                onTap: () => _pickFilterOption(
+                                  label: '室內外',
+                                  currentValue: _environment,
+                                  options: const [
+                                    '',
+                                    ...ChildrenParkMapConstants.environmentFilterOptions,
+                                  ],
+                                  onChanged: (value) =>
+                                      setState(() => _environment = value),
+                                ),
+                              ),
+                              _filterPicker(
+                                label: '票價/類型',
+                                value: _price,
+                                onTap: () => _pickFilterOption(
+                                  label: '票價/類型',
+                                  currentValue: _price,
+                                  options: const [
+                                    '',
+                                    ...ChildrenParkMapConstants.priceFilterOptions,
+                                  ],
+                                  onChanged: (value) =>
+                                      setState(() => _price = value),
+                                ),
+                              ),
+                              _filterPicker(
+                                label: '特殊族群',
+                                value: _special,
+                                onTap: () => _pickFilterOption(
+                                  label: '特殊族群',
+                                  currentValue: _special,
+                                  options: const [
+                                    '',
+                                    ...ChildrenParkMapConstants.specialFilterOptions,
+                                  ],
+                                  onChanged: (value) =>
+                                      setState(() => _special = value),
+                                ),
+                              ),
+                              const SizedBox(width: 6),
+                              OutlinedButton(
+                                onPressed: hasActiveFilters
+                                    ? () {
+                                        setState(() {
+                                          _query = '';
+                                          _searchController.clear();
+                                          _sort = '';
+                                          _height = '';
+                                          _thrill = '';
+                                          _environment = '';
+                                          _price = '';
+                                          _special = '';
+                                        });
+                                      }
+                                    : null,
+                                style: OutlinedButton.styleFrom(
+                                  minimumSize: const Size(86, 40),
+                                  side: const BorderSide(
+                                      color: TPColors.grayscale100),
+                                ),
+                                child: const Text('清除篩選'),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+                Expanded(
+                  child: ListView.separated(
+                    physics: const BouncingScrollPhysics(),
+                    padding: const EdgeInsets.fromLTRB(16, 12, 16, 20),
+                    itemBuilder: (_, index) =>
+                        _facilityCard(attractions[index]),
+                    separatorBuilder: (_, __) => const SizedBox(height: 10),
+                    itemCount: attractions.length,
+                  ),
+                ),
+              ],
+            ),
+    );
+  }
+
+  Widget _filterPicker({
+    required String label,
+    required String value,
+    required VoidCallback onTap,
+    String Function(String value)? displayText,
+  }) {
+    final isActive = value.isNotEmpty;
+    final selectedTextColor =
+        isActive ? TPColors.white : TPColors.grayscale700;
+    return Container(
+      margin: const EdgeInsets.only(right: 8),
+      constraints: const BoxConstraints(minWidth: 92, maxWidth: 132),
+      child: Material(
+        color: isActive ? TPColors.primary700 : TPColors.white,
+        borderRadius: BorderRadius.circular(999),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(999),
+          onTap: onTap,
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(999),
+              border: Border.all(
+                color: isActive ? TPColors.primary700 : TPColors.grayscale100,
               ),
             ),
-            child: Column(
+            child: Row(
               children: [
-                Row(
-                  children: [
-                    Expanded(
-                      child: TextField(
-                        controller: _searchController,
-                        onChanged: (value) =>
-                            setState(() => _query = value.trim()),
-                        decoration: InputDecoration(
-                          isDense: true,
-                          prefixIcon: const Icon(Icons.search, size: 20),
-                          hintText: '搜尋設施或表演...',
-                          contentPadding: const EdgeInsets.symmetric(
-                            horizontal: 12,
-                            vertical: 12,
-                          ),
-                          filled: true,
-                          fillColor: TPColors.white,
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide:
-                                const BorderSide(color: TPColors.grayscale100),
-                          ),
-                          enabledBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide:
-                                const BorderSide(color: TPColors.grayscale100),
-                          ),
-                        ),
-                      ),
+                Expanded(
+                  child: Text(
+                    displayText?.call(value) ?? (value.isEmpty ? label : value),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      color: selectedTextColor,
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
                     ),
-                    const SizedBox(width: 8),
-                    Container(
-                      width: 44,
-                      height: 44,
-                      decoration: BoxDecoration(
-                        color: _filterPanelOpen || hasActiveFilters
-                            ? TPColors.primary700
-                            : TPColors.white,
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(
-                          color: _filterPanelOpen || hasActiveFilters
-                              ? TPColors.primary700
-                              : TPColors.grayscale100,
-                        ),
-                      ),
-                      child: IconButton(
-                        onPressed: () {
-                          setState(() {
-                            _filterPanelOpen = !_filterPanelOpen;
-                          });
-                        },
-                        icon: Icon(
-                          Icons.tune,
-                          color: _filterPanelOpen || hasActiveFilters
-                              ? TPColors.white
-                              : TPColors.primary700,
-                        ),
+                  ),
+                ),
+                Icon(
+                  Icons.expand_more,
+                  size: 18,
+                  color: selectedTextColor,
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _pickFilterOption({
+    required String label,
+    required String currentValue,
+    required List<String> options,
+    required ValueChanged<String> onChanged,
+    String Function(String value)? displayText,
+  }) async {
+    final selected = await showModalBottomSheet<String>(
+      context: context,
+      backgroundColor: TPColors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (sheetContext) {
+        return SafeArea(
+          top: false,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 12, 16, 6),
+                child: Row(
+                  children: [
+                    Text(
+                      label,
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w700,
+                        color: TPColors.grayscale900,
                       ),
                     ),
                   ],
                 ),
-                if (_filterPanelOpen) ...[
-                  const SizedBox(height: 10),
-                  SingleChildScrollView(
-                    scrollDirection: Axis.horizontal,
-                    child: Row(
-                      children: [
-                        _filterDropdown(
-                          label: '等待時間',
-                          value: _sort,
-                          options: const ['', 'none', 'asc', 'desc'],
-                          displayText: (value) => switch (value) {
-                            '' || 'none' => '等待時間',
-                            'asc' => '等待時間（最短）',
-                            'desc' => '等待時間（最長）',
-                            _ => value,
-                          },
-                          onChanged: (value) => setState(() => _sort = value),
-                        ),
-                        _filterDropdown(
-                          label: '身高限制',
-                          value: _height,
-                          options: _heightOptions,
-                          onChanged: (value) => setState(() => _height = value),
-                        ),
-                        _filterDropdown(
-                          label: '尖叫指數',
-                          value: _thrill,
-                          options: _thrillOptions,
-                          onChanged: (value) => setState(() => _thrill = value),
-                        ),
-                        _filterDropdown(
-                          label: '室內外',
-                          value: _environment,
-                          options: _environmentOptions,
-                          onChanged: (value) =>
-                              setState(() => _environment = value),
-                        ),
-                        _filterDropdown(
-                          label: '票價/類型',
-                          value: _price,
-                          options: _priceOptions,
-                          onChanged: (value) => setState(() => _price = value),
-                        ),
-                        _filterDropdown(
-                          label: '特殊族群',
-                          value: _special,
-                          options: _specialOptions,
-                          onChanged: (value) =>
-                              setState(() => _special = value),
-                        ),
-                        const SizedBox(width: 6),
-                        OutlinedButton(
-                          onPressed: hasActiveFilters
-                              ? () {
-                                  setState(() {
-                                    _query = '';
-                                    _searchController.clear();
-                                    _sort = 'none';
-                                    _height = '';
-                                    _thrill = '';
-                                    _environment = '';
-                                    _price = '';
-                                    _special = '';
-                                  });
-                                }
-                              : null,
-                          style: OutlinedButton.styleFrom(
-                            minimumSize: const Size(86, 40),
-                            side:
-                                const BorderSide(color: TPColors.grayscale100),
-                          ),
-                          child: const Text('清除篩選'),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ],
-            ),
-          ),
-          Expanded(
-            child: ListView.separated(
-              physics: const BouncingScrollPhysics(),
-              padding: const EdgeInsets.fromLTRB(16, 12, 16, 20),
-              itemBuilder: (_, index) => _facilityCard(attractions[index]),
-              separatorBuilder: (_, __) => const SizedBox(height: 10),
-              itemCount: attractions.length,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _filterDropdown({
-    required String label,
-    required String value,
-    required List<String> options,
-    required ValueChanged<String> onChanged,
-    String Function(String value)? displayText,
-  }) {
-    final isActive = value.isNotEmpty && value != 'none';
-    return Container(
-      margin: const EdgeInsets.only(right: 8),
-      padding: const EdgeInsets.symmetric(horizontal: 10),
-      decoration: BoxDecoration(
-        color: isActive ? TPColors.primary700 : TPColors.white,
-        borderRadius: BorderRadius.circular(999),
-        border: Border.all(
-          color: isActive ? TPColors.primary700 : TPColors.grayscale100,
-        ),
-      ),
-      child: DropdownButtonHideUnderline(
-        child: DropdownButton<String>(
-          value: value,
-          icon: Icon(
-            Icons.expand_more,
-            size: 18,
-            color: isActive ? TPColors.white : TPColors.grayscale700,
-          ),
-          style: TextStyle(
-            color: isActive ? TPColors.white : TPColors.grayscale700,
-            fontSize: 13,
-            fontWeight: FontWeight.w600,
-          ),
-          dropdownColor: TPColors.white,
-          onChanged: (selected) {
-            if (selected != null) {
-              onChanged(selected);
-            }
-          },
-          items: options
-              .map(
-                (option) => DropdownMenuItem(
+              ),
+              ...options.map((option) {
+                final optionText =
+                    displayText?.call(option) ?? (option.isEmpty ? label : option);
+                return RadioListTile<String>(
                   value: option,
-                  child: Text(displayText?.call(option) ??
-                      (option.isEmpty ? label : option)),
-                ),
-              )
-              .toList(),
-        ),
-      ),
+                  groupValue: currentValue,
+                  title: Text(optionText),
+                  onChanged: (value) => Navigator.of(sheetContext).pop(value),
+                  activeColor: TPColors.primary700,
+                );
+              }),
+              const SizedBox(height: 8),
+            ],
+          ),
+        );
+      },
     );
+
+    if (selected != null) {
+      onChanged(selected);
+    }
   }
 
-  Widget _facilityCard(ParkAttraction attraction) {
-    final waitLabel = attraction.waitMinutes == null
-        ? attraction.status
-        : '${attraction.waitMinutes} 分鐘';
+  Widget _facilityCard(_FacilityListItem item) {
+    final point = item.point;
+    final detail = item.detail;
+    final waitLabel = '${item.waitMinutes} 分鐘';
     return Container(
       decoration: BoxDecoration(
         color: TPColors.white,
@@ -287,19 +437,7 @@ class _ChildrenParkFacilitiesViewState
               ClipRRect(
                 borderRadius:
                     const BorderRadius.horizontal(left: Radius.circular(11)),
-                child: Image.network(
-                  attraction.imageUrl,
-                  width: 118,
-                  height: 148,
-                  fit: BoxFit.cover,
-                  errorBuilder: (_, __, ___) => Container(
-                    width: 118,
-                    height: 148,
-                    color: TPColors.grayscale100,
-                    alignment: Alignment.center,
-                    child: const Icon(Icons.image_not_supported_outlined),
-                  ),
-                ),
+                child: _facilityImage(point.name),
               ),
               Positioned(
                 left: 8,
@@ -311,8 +449,8 @@ class _ChildrenParkFacilitiesViewState
                     borderRadius: BorderRadius.circular(8),
                     border: Border.all(color: TPColors.grayscale100),
                   ),
-                  child: Icon(
-                    _iconByCategory(attraction.category),
+                  child: const Icon(
+                    Icons.rocket_launch_outlined,
                     size: 14,
                     color: TPColors.primary700,
                   ),
@@ -331,7 +469,7 @@ class _ChildrenParkFacilitiesViewState
                     children: [
                       Expanded(
                         child: Text(
-                          attraction.name,
+                          point.name,
                           style: const TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.w700,
@@ -366,9 +504,13 @@ class _ChildrenParkFacilitiesViewState
                     spacing: 6,
                     runSpacing: 6,
                     children: [
-                      _tag(_categoryText(attraction.category),
-                          bg: const Color(0xFFE6F3FF), fg: TPColors.primary700),
-                      _tag('身高限制 ${_restrictionText(attraction)}',
+                      _tag(
+                          detail?.category.isNotEmpty == true
+                              ? detail!.category
+                              : '大型遊樂設施',
+                          bg: const Color(0xFFE6F3FF),
+                          fg: TPColors.primary700),
+                      _tag('身高限制 ${detail?.filters?.height ?? '未限制'}',
                           bg: const Color(0xFFF3F4F6),
                           fg: TPColors.grayscale700),
                     ],
@@ -381,7 +523,7 @@ class _ChildrenParkFacilitiesViewState
                       const SizedBox(width: 4),
                       Expanded(
                         child: Text(
-                          '${_areaText(attraction)} · ${_distanceText(attraction)}',
+                          '${point.floor ?? 3} 樓 · ${_distanceText(point)}',
                           style: const TextStyle(
                             fontSize: 11,
                             color: TPColors.grayscale700,
@@ -390,7 +532,13 @@ class _ChildrenParkFacilitiesViewState
                         ),
                       ),
                       TextButton(
-                        onPressed: () {},
+                        onPressed: () => Get.toNamed(
+                          TPRoute.childrenParkMap,
+                          arguments: {
+                            'focusPointId': point.id,
+                            'openDetail': true,
+                          },
+                        ),
                         style: TextButton.styleFrom(
                           foregroundColor: TPColors.primary700,
                           minimumSize: const Size(40, 26),
@@ -400,7 +548,7 @@ class _ChildrenParkFacilitiesViewState
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             Text(
-                              '查看詳情',
+                              '查看位置',
                               style: TextStyle(
                                 fontSize: 12,
                                 fontWeight: FontWeight.w700,
@@ -439,68 +587,131 @@ class _ChildrenParkFacilitiesViewState
     );
   }
 
-  IconData _iconByCategory(ParkCategory category) {
-    return switch (category) {
-      ParkCategory.attraction => Icons.rocket_launch_outlined,
-      ParkCategory.food => Icons.restaurant_outlined,
-      ParkCategory.souvenir => Icons.shopping_bag_outlined,
-      ParkCategory.restroom => Icons.wc_outlined,
-      ParkCategory.family => Icons.child_care_outlined,
-      ParkCategory.transport => Icons.support_agent_outlined,
-      ParkCategory.show => Icons.theaters_outlined,
-    };
-  }
-
-  String _categoryText(ParkCategory category) {
-    return switch (category) {
-      ParkCategory.attraction => '遊樂設施',
-      ParkCategory.food => '美食餐飲',
-      ParkCategory.souvenir => '紀念品店',
-      ParkCategory.restroom => '廁所',
-      ParkCategory.family => '親子服務',
-      ParkCategory.transport => '交通服務',
-      ParkCategory.show => '表演活動',
-    };
-  }
-
-  String _restrictionText(ParkAttraction attraction) {
-    if (attraction.waitMinutes != null && attraction.waitMinutes! > 40) {
-      return '120cm';
+  Widget _facilityImage(String name) {
+    final imageUrl = _imageByName[name];
+    if (imageUrl != null) {
+      return Image.network(
+        imageUrl,
+        width: 118,
+        height: 148,
+        fit: BoxFit.cover,
+        errorBuilder: (_, __, ___) => _placeholderImage(),
+      );
     }
-    if (attraction.waitMinutes != null && attraction.waitMinutes! > 20) {
-      return '110cm';
-    }
-    return '無限制';
+    return _placeholderImage();
   }
 
-  String _areaText(ParkAttraction attraction) {
-    return attraction.category == ParkCategory.show ? '表演區' : '園區設施';
+  Widget _placeholderImage() {
+    return Container(
+      width: 118,
+      height: 148,
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [Color(0xFFB9E8F8), Color(0xFF7DBFD7)],
+        ),
+      ),
+      alignment: Alignment.center,
+      child: const Icon(
+        Icons.attractions_outlined,
+        color: Colors.white,
+        size: 34,
+      ),
+    );
   }
 
-  String _distanceText(ParkAttraction attraction) {
-    return attraction.distanceText.replaceAll('距離 ', '');
+  String _distanceText(ChildrenParkMapPoint point) {
+    final hash = point.id.codeUnits.fold<int>(0, (sum, code) => sum + code);
+    return '${90 + (hash % 90)}m';
   }
 
-  List<ParkAttraction> _filteredAttractions() {
-    Iterable<ParkAttraction> list =
-        ChildrenParkMockData.attractions.where((item) {
+  List<_FacilityListItem> _filteredAttractions() {
+    Iterable<_FacilityListItem> list = _allItems.where((item) {
       if (_query.isEmpty) {
         return true;
       }
-      return item.name.contains(_query) ||
-          item.status.contains(_query) ||
-          item.description.contains(_query);
+      return item.point.name.contains(_query) ||
+          (item.detail?.category.contains(_query) ?? false) ||
+          (item.detail?.description.contains(_query) ?? false);
     });
+
+    if (_height.isNotEmpty ||
+        _thrill.isNotEmpty ||
+        _environment.isNotEmpty ||
+        _price.isNotEmpty ||
+        _special.isNotEmpty) {
+      list = list.where((item) {
+        final filters = item.detail?.filters;
+        final combinedSpecial = [
+          ...?filters?.special,
+          ...?filters?.environment
+        ];
+        if (!matchesTextFilter(
+          filters?.height,
+          _height.isEmpty ? const [] : [_height],
+        )) {
+          return false;
+        }
+        if (!matchesTextFilter(
+          filters?.thrill,
+          _thrill.isEmpty ? const [] : [_thrill],
+        )) {
+          return false;
+        }
+        if (!matchesListFilter(
+          filters?.environment,
+          _environment.isEmpty ? const [] : [_environment],
+        )) {
+          return false;
+        }
+        if (!matchesTextFilter(
+          filters?.price,
+          _price.isEmpty ? const [] : [_price],
+        )) {
+          return false;
+        }
+        if (!matchesListFilter(
+          combinedSpecial,
+          _special.isEmpty ? const [] : [_special],
+        )) {
+          return false;
+        }
+        return true;
+      });
+    }
 
     if (_sort == 'asc') {
       list = list.toList()
-        ..sort(
-            (a, b) => (a.waitMinutes ?? 999).compareTo(b.waitMinutes ?? 999));
+        ..sort((a, b) => a.waitMinutes.compareTo(b.waitMinutes));
     } else if (_sort == 'desc') {
       list = list.toList()
-        ..sort((a, b) => (b.waitMinutes ?? -1).compareTo(a.waitMinutes ?? -1));
+        ..sort((a, b) => b.waitMinutes.compareTo(a.waitMinutes));
     }
 
     return list.toList();
   }
 }
+
+class _FacilityListItem {
+  final ChildrenParkMapPoint point;
+  final ChildrenParkPlaceDetail? detail;
+  final int waitMinutes;
+
+  const _FacilityListItem({
+    required this.point,
+    required this.detail,
+    required this.waitMinutes,
+  });
+}
+
+const Map<String, String> _imageByName = {
+  'K2鋼鐵碰碰車': 'https://images.unsplash.com/photo-1519340241574-2cec6aef0c01',
+  '幸福碰碰車': 'https://images.unsplash.com/photo-1548950936-904e6f7dc365',
+  '巡弋飛椅': 'https://images.unsplash.com/photo-1533142266415-ac591a4deae9',
+  '轉轉咖啡杯': 'https://images.unsplash.com/photo-1519999482648-25049ddd37b1',
+  'A2戰火金剛': 'https://images.unsplash.com/photo-1464037866556-6812c9d1c72e',
+  'A10迷你卡丁車': 'https://images.unsplash.com/photo-1516627145497-ae6968895b74',
+  '摩天輪': 'https://images.unsplash.com/photo-1533142266415-ac591a4deae9',
+  'K1冰雪奇航': 'https://images.unsplash.com/photo-1529156069898-49953e39b3ac',
+};

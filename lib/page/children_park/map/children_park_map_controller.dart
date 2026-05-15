@@ -40,6 +40,8 @@ class ChildrenParkMapController extends GetxController {
   final Map<String, BitmapDescriptor> _pointMarkerIcons = {};
   final Map<String, BitmapDescriptor> _clusterIcons = {};
   final Set<int> _pendingClusterIconCounts = {};
+  String? _pendingFocusPointId;
+  bool _pendingOpenDetail = false;
   CameraPosition? _lastCameraPosition;
   bool _isAdjustingCamera = false;
 
@@ -70,6 +72,7 @@ class ChildrenParkMapController extends GetxController {
       defaultClusterIcon = await _createClusterIcon('2');
       statusText.value = 'Google Maps 載入完成，共 ${allPoints.length} 個點位。';
       _fetchUserLocation();
+      _applyPendingFocusIfReady();
     } catch (error) {
       statusText.value = '地圖資料載入失敗：$error';
     } finally {
@@ -176,24 +179,24 @@ class ChildrenParkMapController extends GetxController {
     _rebuildMarkers();
     final points = visiblePoints;
     activeCarouselPointId.value = points.isNotEmpty ? points.first.id : null;
-    _fitVisibleBounds();
   }
 
   void toggleRideFilter(String key, String value) {
     final current = rideFilters.value;
-    List<String> toggle(List<String> list) {
-      return list.contains(value)
-          ? list.where((item) => item != value).toList()
-          : [...list, value];
+    List<String> singleSelect(List<String> list) {
+      if (list.contains(value)) {
+        return <String>[];
+      }
+      return <String>[value];
     }
 
     rideFilters.value = switch (key) {
-      'height' => current.copyWith(height: toggle(current.height)),
-      'thrill' => current.copyWith(thrill: toggle(current.thrill)),
+      'height' => current.copyWith(height: singleSelect(current.height)),
+      'thrill' => current.copyWith(thrill: singleSelect(current.thrill)),
       'environment' =>
-        current.copyWith(environment: toggle(current.environment)),
-      'price' => current.copyWith(price: toggle(current.price)),
-      'special' => current.copyWith(special: toggle(current.special)),
+        current.copyWith(environment: singleSelect(current.environment)),
+      'price' => current.copyWith(price: singleSelect(current.price)),
+      'special' => current.copyWith(special: singleSelect(current.special)),
       _ => current,
     };
     _rebuildMarkers();
@@ -202,6 +205,11 @@ class ChildrenParkMapController extends GetxController {
   void clearRideFilters() {
     rideFilters.value = const ChildrenParkRideFilters();
     query.value = '';
+    _rebuildMarkers();
+  }
+
+  void applyRideFilters(ChildrenParkRideFilters filters) {
+    rideFilters.value = filters;
     _rebuildMarkers();
   }
 
@@ -228,6 +236,21 @@ class ChildrenParkMapController extends GetxController {
     );
     attachParkOverlay(imageConfiguration);
     _fitVisibleBounds();
+    _applyPendingFocusIfReady();
+  }
+
+  void handleNavigationArgs(dynamic arguments) {
+    if (arguments is! Map) {
+      return;
+    }
+    final focusPointId = arguments['focusPointId']?.toString();
+    final openDetail = arguments['openDetail'] == true;
+    if (focusPointId == null || focusPointId.isEmpty) {
+      return;
+    }
+    _pendingFocusPointId = focusPointId;
+    _pendingOpenDetail = openDetail;
+    _applyPendingFocusIfReady();
   }
 
   void onCameraMove(CameraPosition position) {
@@ -278,6 +301,44 @@ class ChildrenParkMapController extends GetxController {
     activeCarouselPointId.value = point.id;
     selectedPoint.value = null;
     _rebuildMarkers();
+  }
+
+  ChildrenParkPlaceDetail? detailForPoint(ChildrenParkMapPoint point) {
+    return placeDetailsByName[normalizePlaceName(point.name)];
+  }
+
+  void _applyPendingFocusIfReady() {
+    final pointId = _pendingFocusPointId;
+    if (pointId == null || allPoints.isEmpty) {
+      return;
+    }
+    ChildrenParkMapPoint? point;
+    for (final item in allPoints) {
+      if (item.id == pointId) {
+        point = item;
+        break;
+      }
+    }
+    if (point == null) {
+      _pendingFocusPointId = null;
+      _pendingOpenDetail = false;
+      return;
+    }
+
+    final pointType = getPointContentType(point);
+    if (selectedContentType.value != pointType) {
+      selectedContentType.value = pointType;
+    }
+
+    final openDetail = _pendingOpenDetail;
+    _pendingFocusPointId = null;
+    _pendingOpenDetail = false;
+
+    if (openDetail) {
+      showPointDetail(point);
+    } else {
+      focusPoint(point);
+    }
   }
 
   void recenterPark() {
