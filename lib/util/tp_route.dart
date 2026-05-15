@@ -211,18 +211,30 @@ abstract class TPRoute {
     GetPage(
       name: childrenParkHome,
       page: () => const ChildrenParkHomeView(),
+      binding: BindingsBuilder(() {
+        Get.put<ChildrenParkController>(ChildrenParkController());
+      }),
     ),
     GetPage(
       name: childrenParkFacilities,
       page: () => const ChildrenParkFacilitiesView(),
+      binding: BindingsBuilder(() {
+        Get.put<ChildrenParkController>(ChildrenParkController());
+      }),
     ),
     GetPage(
       name: childrenParkMap,
       page: () => const ChildrenParkMapView(),
+      binding: BindingsBuilder(() {
+        Get.put<ChildrenParkController>(ChildrenParkController());
+      }),
     ),
     GetPage(
       name: childrenParkEvents,
       page: () => const ChildrenParkEventsView(),
+      binding: BindingsBuilder(() {
+        Get.put<ChildrenParkController>(ChildrenParkController());
+      }),
     ),
     GetPage(
       name: childrenParkTransport,

@@ -7,15 +7,15 @@ import 'package:town_pass/util/tp_route.dart';
 class ChildrenParkShell extends StatelessWidget {
   final String title;
   final String currentRoute;
-  final String description;
-  final bool showSecondaryLinks;
+  final Widget body;
+  final bool showBottomNavigation;
 
   const ChildrenParkShell({
     super.key,
     required this.title,
     required this.currentRoute,
-    required this.description,
-    this.showSecondaryLinks = false,
+    required this.body,
+    this.showBottomNavigation = true,
   });
 
   int _tabIndexByRoute(String routeName) {
@@ -40,75 +40,37 @@ class ChildrenParkShell extends StatelessWidget {
     return Scaffold(
       backgroundColor: TPColors.white,
       appBar: TPAppBar(title: title),
-      body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                description,
-                style: const TextStyle(
-                  fontSize: 16,
-                  height: 1.5,
-                  color: TPColors.grayscale900,
+      body: SafeArea(child: body),
+      bottomNavigationBar: showBottomNavigation
+          ? BottomNavigationBar(
+              type: BottomNavigationBarType.fixed,
+              currentIndex: _tabIndexByRoute(currentRoute),
+              selectedItemColor: TPColors.primary700,
+              unselectedItemColor: TPColors.grayscale700,
+              onTap: (index) {
+                final routeName = switch (index) {
+                  0 => TPRoute.childrenParkHome,
+                  1 => TPRoute.childrenParkFacilities,
+                  2 => TPRoute.childrenParkMap,
+                  3 => TPRoute.childrenParkEvents,
+                  _ => TPRoute.childrenParkHome,
+                };
+                _navigate(routeName);
+              },
+              items: const [
+                BottomNavigationBarItem(
+                    icon: Icon(Icons.home_outlined), label: '首頁'),
+                BottomNavigationBarItem(
+                  icon: Icon(Icons.attractions_outlined),
+                  label: '設施',
                 ),
-              ),
-              const SizedBox(height: 12),
-              const Text(
-                '此頁面為路由骨架，內容將在後續版本補齊。',
-                style: TextStyle(
-                  fontSize: 14,
-                  color: TPColors.grayscale700,
-                ),
-              ),
-              if (showSecondaryLinks) ...[
-                const SizedBox(height: 20),
-                Wrap(
-                  spacing: 12,
-                  runSpacing: 8,
-                  children: [
-                    OutlinedButton(
-                      onPressed: () => _navigate(TPRoute.childrenParkTransport),
-                      child: const Text('前往交通資訊'),
-                    ),
-                    OutlinedButton(
-                      onPressed: () => _navigate(TPRoute.childrenParkFaq),
-                      child: const Text('前往 FAQ'),
-                    ),
-                  ],
-                ),
+                BottomNavigationBarItem(
+                    icon: Icon(Icons.map_outlined), label: '地圖'),
+                BottomNavigationBarItem(
+                    icon: Icon(Icons.event_note_outlined), label: '活動'),
               ],
-            ],
-          ),
-        ),
-      ),
-      bottomNavigationBar: BottomNavigationBar(
-        type: BottomNavigationBarType.fixed,
-        currentIndex: _tabIndexByRoute(currentRoute),
-        selectedItemColor: TPColors.primary700,
-        unselectedItemColor: TPColors.grayscale700,
-        onTap: (index) {
-          final routeName = switch (index) {
-            0 => TPRoute.childrenParkHome,
-            1 => TPRoute.childrenParkFacilities,
-            2 => TPRoute.childrenParkMap,
-            3 => TPRoute.childrenParkEvents,
-            _ => TPRoute.childrenParkHome,
-          };
-          _navigate(routeName);
-        },
-        items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.home_outlined), label: '首頁'),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.attractions_outlined),
-            label: '設施',
-          ),
-          BottomNavigationBarItem(icon: Icon(Icons.map_outlined), label: '地圖'),
-          BottomNavigationBarItem(
-              icon: Icon(Icons.event_note_outlined), label: '活動'),
-        ],
-      ),
+            )
+          : null,
     );
   }
 }
