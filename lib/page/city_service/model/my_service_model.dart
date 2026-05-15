@@ -194,7 +194,7 @@ extension MyServiceIdExt on MyServiceItemId {
           description: '智慧導覽地圖、排隊時間與活動行程',
           icon: Assets.svg.iconChildrenAmusementPark.svg(),
           category: MyServiceCategory.explore,
-          destinationUrl: 'local://children_park',
+          destinationUrl: 'local://children_park_home',
         ),
     };
   }
