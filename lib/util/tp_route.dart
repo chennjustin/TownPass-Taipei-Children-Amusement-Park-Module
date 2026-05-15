@@ -62,6 +62,12 @@ abstract class TPRoute {
   static const String suspendAccount = '/suspend_account';
   static const String webView = '/web_view';
   static const String childrenPark = '/children_park';
+  static const String childrenParkHome = '/children_park_home';
+  static const String childrenParkFacilities = '/children_park_facilities';
+  static const String childrenParkMap = '/children_park_map';
+  static const String childrenParkEvents = '/children_park_events';
+  static const String childrenParkTransport = '/children_park_transport';
+  static const String childrenParkFaq = '/children_park_faq';
 
   static final List<GetPage> page = [
     GetPage(
@@ -191,6 +197,48 @@ abstract class TPRoute {
     ),
     GetPage(
       name: childrenPark,
+      page: () => const ChildrenParkView(),
+      binding: BindingsBuilder(() {
+        Get.put<ChildrenParkController>(ChildrenParkController());
+      }),
+    ),
+    GetPage(
+      name: childrenParkHome,
+      page: () => const ChildrenParkView(),
+      binding: BindingsBuilder(() {
+        Get.put<ChildrenParkController>(ChildrenParkController());
+      }),
+    ),
+    GetPage(
+      name: childrenParkFacilities,
+      page: () => const ChildrenParkView(),
+      binding: BindingsBuilder(() {
+        Get.put<ChildrenParkController>(ChildrenParkController());
+      }),
+    ),
+    GetPage(
+      name: childrenParkMap,
+      page: () => const ChildrenParkView(),
+      binding: BindingsBuilder(() {
+        Get.put<ChildrenParkController>(ChildrenParkController());
+      }),
+    ),
+    GetPage(
+      name: childrenParkEvents,
+      page: () => const ChildrenParkView(),
+      binding: BindingsBuilder(() {
+        Get.put<ChildrenParkController>(ChildrenParkController());
+      }),
+    ),
+    GetPage(
+      name: childrenParkTransport,
+      page: () => const ChildrenParkView(),
+      binding: BindingsBuilder(() {
+        Get.put<ChildrenParkController>(ChildrenParkController());
+      }),
+    ),
+    GetPage(
+      name: childrenParkFaq,
       page: () => const ChildrenParkView(),
       binding: BindingsBuilder(() {
         Get.put<ChildrenParkController>(ChildrenParkController());
